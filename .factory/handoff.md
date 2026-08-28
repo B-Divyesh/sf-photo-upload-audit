@@ -1,4 +1,12 @@
-# Photo Upload Audit — repair handoff
+# Photo Upload Audit — verified release handoff
+
+## Independent verification status
+
+**PASS — candidate `19d07cdba8dd0f520ca0465033854859875a4862` is accepted.** Independent verification on 28 August 2026 ran all 17 exact `.factory/claims.json` commands from a clean `npm ci` checkout (all passed), the complete `npm test` suite (29/29), typecheck, lint, production build, live accessibility/mobile/keyboard/PWA checks, API rate-limit test, checkout redirect, and desktop-release checksum. The live HTML, JS, and CSS SHA-256 values exactly match the candidate build. Full evidence is in [`.factory/verification-2.md`](verification-2.md).
+
+Known low-severity deployment behavior: unknown SPA paths render the designed 404 UI with HTTP 200. The verifier host lacks GLib development packages, so its local Tauri bundle cannot be produced; the published `v0.1.1` Linux `.deb` was downloaded and checksum-verified instead.
+
+---
 
 ## Status
 
