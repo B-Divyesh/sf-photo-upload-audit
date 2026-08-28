@@ -69,7 +69,7 @@ main { min-height: 68vh; }
 .plain-facts svg { width: 18px; height: 18px; fill: none; stroke: var(--scan); stroke-width: 2; }
 .hero-art { position: absolute; z-index: 0; width: min(65vw, 920px); right: -4%; top: 9%; opacity: .86; mask-image: linear-gradient(to bottom, black 65%, transparent 100%); }
 .hero-art img { width: 100%; height: auto; }
-.hero-receipt { position: absolute; z-index: 3; right: clamp(24px, 8vw, 132px); bottom: 82px; width: 220px; padding: 18px; display: grid; gap: 5px; background: rgb(10 25 32 / 90%); border: 1px solid var(--line); border-radius: 2px 16px 2px 16px; backdrop-filter: blur(12px); font: .78rem/1.5 ui-monospace, monospace; box-shadow: 0 24px 72px #0008; }
+.hero-receipt { position: absolute; z-index: 3; right: clamp(24px, 8vw, 132px); bottom: 82px; width: 220px; padding: 18px; display: grid; gap: 5px; background: rgb(10 25 32 / 90%); border: 1px solid var(--line); border-radius: 2px 16px 2px 16px; backdrop-filter: blur(12px); font: 1rem/1.5 ui-monospace, monospace; box-shadow: 0 24px 72px #0008; }
 .hero-receipt > span:first-child { color: var(--mist); }
 .result-ok { color: var(--scan); }
 .result-warn { color: var(--amber); }
@@ -156,7 +156,7 @@ footer nav { display: flex; gap: 24px; }
 .error-message span { color: var(--mist); }
 .scan-progress { position: relative; margin-top: 28px; padding: 24px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
 .scan-progress > div { display: flex; justify-content: space-between; }
-.scan-progress p { margin: 8px 0 0; color: var(--mist); font: .85rem ui-monospace, monospace; }
+.scan-progress p { margin: 8px 0 0; color: var(--mist); font: 1rem ui-monospace, monospace; }
 .scan-progress progress { width: 100%; height: 8px; accent-color: var(--scan); }
 .scan-beam { position: absolute; inset: 0 auto 0 0; width: 18%; background: linear-gradient(90deg, transparent, rgb(88 229 214 / 18%), transparent); animation: scan 900ms ease-in-out 1; }
 @keyframes scan { from { transform: translateX(-100%); } to { transform: translateX(650%); } }
@@ -263,7 +263,7 @@ td small { margin-top: 5px; color: var(--mist); }
   tr { display: block; margin-bottom: 14px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 2px 14px 2px 14px; }
   td { display: grid; grid-template-columns: 92px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgb(43 89 101 / 40%); }
   td:last-child { border: 0; }
-  td::before { content: attr(data-label); color: var(--mist); font-size: .72rem; }
+  td::before { content: attr(data-label); color: var(--mist); font-size: 1rem; }
   .path { max-width: 100%; }
   th, td, .summary-strip dt, .result-context, .path { font-size: 1rem; }
   .receipt-history li { align-items: flex-start; flex-direction: column; }

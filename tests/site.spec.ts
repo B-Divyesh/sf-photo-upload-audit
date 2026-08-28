@@ -68,6 +68,26 @@ test('meaningful phone copy is at least 16px', async ({ page }) => {
   expect(tooSmall).toEqual([]);
 });
 
+test('phone scan progress keeps its status and current filename at 16px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    const original = File.prototype.stream;
+    File.prototype.stream = function () {
+      const stream = original.call(this);
+      const reader = stream.getReader();
+      return new ReadableStream({ async pull(controller) { await new Promise((resolve) => setTimeout(resolve, 60)); const next = await reader.read(); if (next.done) controller.close(); else controller.enqueue(next.value); } });
+    };
+  });
+  await page.goto('/audit');
+  await page.locator('#source-folder').setInputFiles(fixture('hash-source'));
+  await page.locator('#destination-folder').setInputFiles(fixture('hash-destination'));
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  const progress = page.locator('.scan-progress');
+  await expect(progress).toBeVisible();
+  const sizes = await progress.locator('span, strong, p').evaluateAll((elements) => elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize)));
+  expect(sizes.every((size) => size >= 16)).toBe(true);
+});
+
 test('history navigation restores routes and heading focus', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Demo', exact: true }).click();
