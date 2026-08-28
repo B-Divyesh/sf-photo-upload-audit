@@ -326,7 +326,19 @@ test('@claim:receipt-limit keeps at most 25 local receipts and explains the limi
 });
 
 test('@claim:checkout-health sends buyers to a live hosted checkout', async ({ request }) => {
-  const response = await request.get('https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout', { maxRedirects: 0 });
-  expect(response.status()).toBe(303);
-  expect(response.headers().location).toMatch(/^https:\/\/checkout\.dodopayments\.com\//);
+  test.setTimeout(45_000);
+  let response: Awaited<ReturnType<typeof request.get>> | undefined;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const candidate = await request.get('https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout', { maxRedirects: 0, timeout: 12_000 });
+      if (candidate.status() === 303) { response = candidate; break; }
+    } catch {
+      // The hosted checkout can have a short cold-start delay. Retry the same
+      // observable public endpoint rather than replacing this live check.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+  expect(response, 'The hosted checkout should answer within three attempts.').toBeTruthy();
+  expect(response!.status()).toBe(303);
+  expect(response!.headers().location).toMatch(/^https:\/\/checkout\.dodopayments\.com\//);
 });
