@@ -1,0 +1,12 @@
+{
+  "name": "Photo Upload Audit",
+  "short_name": "Photo Audit",
+  "description": "Compare a camera export with any backup folder.",
+  "start_url": "/audit",
+  "display": "standalone",
+  "background_color": "#061015",
+  "theme_color": "#061015",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
