@@ -1,0 +1,72 @@
+[
+  {
+    "id": "demo-sandbox",
+    "claim": "Try a finished audit with sample data in one click",
+    "where": "landing primary action, demo banner, README",
+    "test": "npm test -- --grep @claim:demo-sandbox",
+    "sandbox": "fresh browser context; open /demo and inspect the seeded receipt"
+  },
+  {
+    "id": "local-only",
+    "claim": "Media contents, names, hashes, and reports stay on this device",
+    "where": "landing facts, privacy section, privacy page, README",
+    "test": "npm test -- --grep @claim:local-only",
+    "sandbox": "fresh browser context; monitor every request during the complete demo flow"
+  },
+  {
+    "id": "hash-compare",
+    "claim": "Matches files by SHA-256 content, even when a backup name differs",
+    "where": "landing receipt copy, audit page, README",
+    "test": "npm test -- --grep @claim:hash-compare",
+    "sandbox": "fresh browser context; select generated source and destination files with equal bytes and different names"
+  },
+  {
+    "id": "live-photo",
+    "claim": "Reports complete and unpaired Live Photo files",
+    "where": "landing copy, demo receipt, README",
+    "test": "npm test -- --grep @claim:live-photo",
+    "sandbox": "fresh browser context; use the HEIC/MOV sample pair and the missing HEIC sample"
+  },
+  {
+    "id": "csv-export",
+    "claim": "Exports the complete receipt as CSV",
+    "where": "receipt action, landing facts, README",
+    "test": "npm test -- --grep @claim:csv-export",
+    "sandbox": "fresh browser context; download demo CSV and assert its header and one row per result"
+  },
+  {
+    "id": "no-account",
+    "claim": "Core scanning and CSV export work without an account or license",
+    "where": "landing facts, paid tier, README",
+    "test": "npm test -- --grep @claim:no-account",
+    "sandbox": "fresh browser context with empty localStorage; open /audit"
+  },
+  {
+    "id": "read-only",
+    "claim": "The scanner never moves, edits, or deletes selected media",
+    "where": "landing privacy section, audit screen, README",
+    "test": "npm test -- --grep @claim:read-only",
+    "sandbox": "fresh browser context; scan selected immutable File objects and confirm both remain in the receipt"
+  },
+  {
+    "id": "offline-reload",
+    "claim": "The installed web app and sample audit work offline after the first visit",
+    "where": "README, installable PWA behavior",
+    "test": "npm test -- --grep @claim:offline-reload",
+    "sandbox": "fresh browser context; load /demo, wait for service worker, go offline, and reload"
+  },
+  {
+    "id": "license-private",
+    "claim": "License checks send only the license token and no photo data",
+    "where": "landing privacy section, privacy page, README",
+    "test": "npm test -- --grep @claim:license-private",
+    "sandbox": "fresh browser context with a test token; intercept the verification request and inspect its URL and empty body"
+  },
+  {
+    "id": "archive-license",
+    "claim": "The $19 one-time Archive License saves local receipts and prints certificates",
+    "where": "landing paid section, terms page, README",
+    "test": "npm test -- --grep @claim:archive-license",
+    "sandbox": "fresh browser context with a cached valid test verdict; complete a fixture audit, save it, and invoke print"
+  }
+]

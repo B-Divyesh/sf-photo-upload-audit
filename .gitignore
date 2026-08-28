@@ -3,6 +3,8 @@ dist/
 test-results/
 playwright-report/
 .factory/lighthouse.json
+.factory/evidence/
+graphify-out/
 src-tauri/target/
 .DS_Store
 *.log

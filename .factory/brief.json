@@ -1,0 +1,11 @@
+{
+  "slug": "photo-upload-audit",
+  "title": "Photo Upload Audit",
+  "summary": "Verify every original, video, and Live Photo sidecar before clearing your phone.",
+  "territory": "utilities",
+  "artifact_class": "desktop-app",
+  "user": "iPhone and Android owners who auto-back up photos but need proof that every original, Live Photo sidecar, and video reached their chosen disk or server.",
+  "smallest_useful_product": "Offline desktop/PWA scanner that reads a camera export and destination, matches hashes plus Live Photo pairs, and produces a missing/duplicate/changed report.",
+  "monetization": "one-time",
+  "constraints": "Local-only indexing by default; never modify media; understand HEIC/MOV Live Photo pairing and filesystem timestamp differences; hashes can take substantial time on large libraries."
+}
