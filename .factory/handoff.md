@@ -27,7 +27,7 @@ Deploy `dist/site/` with the work-order static deployment helper.
 
 ## Release status
 
-The pushed `v0.1.2` GitHub Actions desktop release workflow is building macOS arm64/x64, Windows, and Linux artifacts. It must complete before users can download installers built from this repair; its URL is `https://github.com/B-Divyesh/sf-photo-upload-audit/actions/runs/33181103741`.
+The `v0.1.2` GitHub Actions workflow completed successfully on macOS arm64/x64, Windows, and Linux. The public release is `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.2`; it includes `.dmg`, `.msi`/`.exe`, `.AppImage`, `.deb`, `SHA256SUMS`, and `latest.json`. `@claim:release-integrity-files` was rerun against this final release and passed.
 
 ## Needs operator action
 
