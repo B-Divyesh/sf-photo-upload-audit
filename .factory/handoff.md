@@ -1,3 +1,28 @@
+# Photo Upload Audit — review 4 handoff
+
+## Review outcome
+
+Independent adversarial review 4 completed against the live production site and clean repository base `761f3359f5d285bf1257f3f979ec794112d4d4a8`.
+
+- Wrote `.factory/review-4.md`.
+- No product code, assets, configuration, or deployment state was changed.
+- Verdict: **FAIL** with two minor, unlisted public-claim findings: landing capability assurances without claim coverage (`F-4-1`) and an untested README installer-format assertion (`F-4-2`).
+
+## Verification
+
+- `npm ci`: passed, zero reported vulnerabilities.
+- Ran all 24 exact claim commands from `.factory/claims.json` serially: passed.
+- Confirmed every declared `@claim:<id>` appears exactly once in tests.
+- `npm test`: passed, 42/42 (`test-results/.last-run.json` reports `passed`).
+- `npm run build:site`: passed and produced `dist/site/`; initial JavaScript was 12.99 kB gzip.
+- Live production checks: fresh 390 px and desktop first read, one-click populated demo, demo reset and exit, offline demo reload, 404 status, route metadata, link crawl, header/footer/deep-link behavior, and prior-review verification.
+
+## Next steps
+
+Address both findings in `.factory/review-4.md`, add the associated claim coverage or remove/narrow the copy, then run a new full adversarial review. The existing review-3 repair details remain below for operational history.
+
+---
+
 # Photo Upload Audit — polish round 3 handoff
 
 ## Completed
