@@ -24,7 +24,7 @@ Every historical finding is mapped to its repair and evidence in `.factory/polis
 - Cold live evidence: `.factory/evidence/polish-4-live/recheck/report.json` and screenshots in the same directory. `/`, `/demo`, `/audit`, `/history`, `/privacy`, and `/terms` returned 200; a random unknown route returned 404 with the styled archive page.
 - `/opt/fleet/lib/verify-url.sh` passed for live home, `?demo=1`, and `/audit`; reports and screenshots are in `.factory/evidence/polish-4-live/home`, `demo`, and `audit`.
 - Live Playwright axe sweep found zero serious or critical violations across all normal routes and the styled 404. The 390 px sweep found no target below 44 px. Demo reset, demo-to-real isolation, offline reload, route-focus restoration, and published installer formats all passed live.
-- Lighthouse mobile report: Performance 99, Accessibility 100, FCP 995 ms, LCP 1295 ms, CLS 0 (`.factory/evidence/polish-4-live/lighthouse.json`). Lighthouse emitted a post-audit Chromium screenshot crash warning after producing the valid score JSON; the Playwright live checks and screenshots completed without that issue.
+- Lighthouse mobile report: Performance 100, Accessibility 100, FCP 922 ms, LCP 1222 ms, CLS 0 (`.factory/evidence/polish-4-live/lighthouse-retry.json`).
 
 ## Run and deploy
 

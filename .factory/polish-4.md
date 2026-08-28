@@ -41,6 +41,6 @@ Live evidence is in `.factory/evidence/polish-4-live/`: `recheck/report.json`, `
 - `?demo=1` loaded eight realistic rows, retained its banner, reset from one Missing row back to All/eight rows, made no off-origin requests, and discarded the sample before `/audit` while preserving real receipt storage.
 - The live demo reloaded offline after service-worker readiness. Browser Back restored home-heading focus.
 - Worker URL verification passed for home, demo, and audit. The not-found document’s HTTP 404 produces Chrome’s expected network message for that document itself; no application JavaScript error occurred.
-- Lighthouse mobile JSON: Performance 99, Accessibility 100, FCP 995 ms, LCP 1295 ms, CLS 0 (`.factory/evidence/polish-4-live/lighthouse.json`).
+- Lighthouse mobile: Performance 100, Accessibility 100, FCP 922 ms, LCP 1222 ms, CLS 0 (`.factory/evidence/polish-4-live/lighthouse-retry.json`).
 
 No review finding remains open.
