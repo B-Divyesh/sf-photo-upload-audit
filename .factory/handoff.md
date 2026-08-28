@@ -1,62 +1,41 @@
-# Photo Upload Audit — review 4 handoff
+# Photo Upload Audit — polish round 4 handoff
 
-## Review outcome
+## Delivered
 
-Independent adversarial review 4 completed against the live production site and clean repository base `761f3359f5d285bf1257f3f979ec794112d4d4a8`.
+The round-4 repair is committed and deployed. Final product commits are `43fb78c` (`fix: cover published desktop release formats`) and `3d4acb0` (`fix: refresh installed audit shell`). The live site is <https://photo-upload-audit.sociobot.in>.
 
-- Wrote `.factory/review-4.md`.
-- No product code, assets, configuration, or deployment state was changed.
-- Verdict: **FAIL** with two minor, unlisted public-claim findings: landing capability assurances without claim coverage (`F-4-1`) and an untested README installer-format assertion (`F-4-2`).
+- Removed two unsupported absence-of-feature promises from the landing boundary copy. It now gives a useful, honest backup and restore-test next step.
+- Added `desktop-release-formats` to `.factory/claims.json` and an exact tagged test against the real GitHub release. It verifies the unsigned release notice plus `.dmg`, Windows `.msi`/`.exe`, `.AppImage`, and `.deb` assets.
+- Strengthened the existing unsigned-installer test so the landing version, published tag, and published unsigned notice agree.
+- Advanced the service-worker cache generation from `r4` to `r5`, ensuring already installed browsers receive this static repair rather than serving the former cached landing shell.
+- Updated the catalog description to the verb-first sentence: “Check every photo backup before clearing space on your phone.”
 
-## Verification
-
-- `npm ci`: passed, zero reported vulnerabilities.
-- Ran all 24 exact claim commands from `.factory/claims.json` serially: passed.
-- Confirmed every declared `@claim:<id>` appears exactly once in tests.
-- `npm test`: passed, 42/42 (`test-results/.last-run.json` reports `passed`).
-- `npm run build:site`: passed and produced `dist/site/`; initial JavaScript was 12.99 kB gzip.
-- Live production checks: fresh 390 px and desktop first read, one-click populated demo, demo reset and exit, offline demo reload, 404 status, route metadata, link crawl, header/footer/deep-link behavior, and prior-review verification.
-
-## Next steps
-
-Address both findings in `.factory/review-4.md`, add the associated claim coverage or remove/narrow the copy, then run a new full adversarial review. The existing review-3 repair details remain below for operational history.
-
----
-
-# Photo Upload Audit — polish round 3 handoff
-
-## Completed
-
-Repaired and deployed every finding from reviews 1–3. The final runtime revision is `d79b8eb` and is live at <https://photo-upload-audit.sociobot.in>.
-
-- Added the isolated `demo-reset` claim and its exact sample-reset test.
-- Enforced 44 px phone targets and 16 px meaningful mobile copy, including live scan progress and mobile receipt labels.
-- Kept demo data out of real mode across Start for real and browser Back/Forward. Real receipt storage remains untouched.
-- Preserved route titles, metadata, focus behavior, legal pages, real 404 responses, local-first privacy, and the luminous glass archive visual system.
-- Advanced the service-worker cache to `photo-upload-audit-v0.1.2-r4` so existing installed browsers receive this static repair.
-- Updated the catalog description; it is verb-first and 62 characters: “Verify every photo backup before clearing space on your phone.”
-
-The complete finding map is `.factory/polish-3.md`.
+Every historical finding is mapped to its repair and evidence in `.factory/polish-4.md`.
 
 ## Verification
 
-- Final clean remote clone: `/tmp/photo-upload-audit-final.jNyDXR/repo` at `d79b8eb`.
+- Final clean remote clone: `/tmp/photo-upload-audit-polish-4-final.0t0KLP/repo` at `3d4acb0`.
   - `npm ci`: passed, zero reported vulnerabilities.
-  - Every one of the 24 exact claim commands in `.factory/claims.json`: passed, one matching tagged test each.
-  - `npm test`: **42 passed**. Evidence: `test-results/polish-3-final-clean.log`.
-- Build: `npm run build:site` passed and produced `dist/site/`.
-  - Initial JS: 36.37 kB raw / 12.99 kB gzip.
-  - CSS: 20.13 kB raw / 5.35 kB gzip.
-- Production deployment: Azure Static Web Apps deployment `937693bb-a948-45fc-abda-d73cf1548b7a` completed successfully.
-  - Live HTML serves `assets/index-BRjBS_92.js`, matching the final build.
-  - Live `/does-not-exist` returns HTTP 404 with the styled archive page.
-  - Cold live report: `test-results/polish-3-live/report.json`.
-  - Worker URL verifier passed for `/` and `/?demo=1`: `test-results/polish-3-live-verify-home/verify.json`, `test-results/polish-3-live-verify-demo/verify.json`.
-  - Live Playwright axe sweep found zero serious or critical issues on `/`, `/demo`, `/audit`, `/history`, `/privacy`, and `/terms`.
-  - Lighthouse mobile: Performance **100**, Accessibility **100**, LCP **1.8 s**, CLS **0** (`test-results/polish-3-lighthouse.json`).
+  - All 25 exact commands from `.factory/claims.json`: passed, with exactly one tagged test per claim.
+  - `npm test`: passed (43 tests); `test-results/.last-run.json` is `passed`.
+  - `npm run build:site`: passed and produced `dist/site/`.
+- Final build budget: initial JavaScript 36.38 kB raw / 12.98 kB gzip; CSS 20.13 kB raw / 5.35 kB gzip.
+- Production deployment: Azure Static Web Apps deployment `52fb4fa2-7e40-4988-90bb-77869bb984ee` succeeded. Live `/sw.js` has `photo-upload-audit-v0.1.2-r5`.
+- Cold live evidence: `.factory/evidence/polish-4-live/recheck/report.json` and screenshots in the same directory. `/`, `/demo`, `/audit`, `/history`, `/privacy`, and `/terms` returned 200; a random unknown route returned 404 with the styled archive page.
+- `/opt/fleet/lib/verify-url.sh` passed for live home, `?demo=1`, and `/audit`; reports and screenshots are in `.factory/evidence/polish-4-live/home`, `demo`, and `audit`.
+- Live Playwright axe sweep found zero serious or critical violations across all normal routes and the styled 404. The 390 px sweep found no target below 44 px. Demo reset, demo-to-real isolation, offline reload, route-focus restoration, and published installer formats all passed live.
+- Lighthouse mobile report: Performance 99, Accessibility 100, FCP 995 ms, LCP 1295 ms, CLS 0 (`.factory/evidence/polish-4-live/lighthouse.json`). Lighthouse emitted a post-audit Chromium screenshot crash warning after producing the valid score JSON; the Playwright live checks and screenshots completed without that issue.
 
-## Known gaps and operator notes
+## Run and deploy
 
-No acceptance findings remain.
+```sh
+npm ci
+npm test
+npm run build:site
+```
 
-Desktop installers are intentionally unsigned and honestly disclosed for v0.1.2. If signing becomes required, the operator needs to provide `APPLE_CERTIFICATE` and `WINDOWS_CERT_PFX` to the release workflow; no signing secrets are stored in this repository.
+Deploy `dist/site/` as a static site. The factory deployment ran this work order’s configured static deployment path; no application secrets are stored in the repository.
+
+## Known gaps / operator action
+
+No product acceptance finding remains. Desktop installers are intentionally unsigned and accurately disclosed for v0.1.2. To sign future desktop releases, configure `APPLE_CERTIFICATE` and `WINDOWS_CERT_PFX` in the GitHub release workflow environment; do not add those secrets to this repository.
