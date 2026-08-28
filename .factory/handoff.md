@@ -55,7 +55,16 @@ npm audit --audit-level=high
 
 ## Release and deployment
 
-Push `main` and tag `v0.1.1`. The existing release workflow builds unsigned macOS arm64/x64, Windows, and Linux artifacts plus `SHA256SUMS` and `latest.json`. The static deployment target remains `dist/site/`.
+Deployed the static build to `https://photo-upload-audit.sociobot.in` from `dist/site/`. The live JS and CSS SHA-256 values exactly match the local production build:
+
+- JS `75546ca5f7a91a719105628e46d8591a89cedab46781799f19cb25f8e0dcde26`
+- CSS `37faf7bcd15c01c5a642874776386d5177537dd72f78011177c1fdacbdc1ebc2`
+
+Tag `v0.1.1` points at `5430ccdf197aed3f0235884978a70535bcd16b86`. GitHub Actions run `33172254343` completed successfully from that commit. The published release has macOS arm64/x64, Windows `.exe`/`.msi`, Linux `.AppImage`/`.deb`, `SHA256SUMS`, and valid `latest.json`. A downloaded Windows setup executable verified successfully with `sha256sum -c SHA256SUMS`.
+
+## Known gap
+
+Azure Static Web Apps still responds HTTP 200 for an unknown SPA route while rendering the styled not-found page. This is a platform navigation-fallback behavior; it is the verifier's low-severity finding and does not affect known routes, the live audit, or deployment identity.
 
 ## Needs operator action
 
