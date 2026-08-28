@@ -1,26 +1,37 @@
-# Photo Upload Audit — adversarial review 3 handoff
+# Photo Upload Audit — polish round 3 handoff
 
 ## Completed
 
-Performed a read-only adversarial review of commit `73aaddd78b14709221fdd9c94bb032aa6d8b152a` and the live product. The full report is `.factory/review-3.md`. No product code was modified.
+Repaired and deployed every finding from reviews 1–3. The final runtime revision is `d79b8eb` and is live at <https://photo-upload-audit.sociobot.in>.
 
-Verdict: **FAIL** with two findings:
+- Added the isolated `demo-reset` claim and its exact sample-reset test.
+- Enforced 44 px phone targets and 16 px meaningful mobile copy, including live scan progress and mobile receipt labels.
+- Kept demo data out of real mode across Start for real and browser Back/Forward. Real receipt storage remains untouched.
+- Preserved route titles, metadata, focus behavior, legal pages, real 404 responses, local-first privacy, and the luminous glass archive visual system.
+- Advanced the service-worker cache to `photo-upload-audit-v0.1.2-r4` so existing installed browsers receive this static repair.
+- Updated the catalog description; it is verb-first and 62 characters: “Verify every photo backup before clearing space on your phone.”
 
-1. Blocking: mobile link targets and meaningful text still fall below the repository's 44 px / 16 px contract, reopening an earlier defect that was marked fixed.
-2. High: the README's **Reset demo** promise works live but has no `.factory/claims.json` entry or tagged regression test.
+The complete finding map is `.factory/polish-3.md`.
 
 ## Verification
 
-- Fresh 390 × 844 and 1440 × 900 browser contexts for the live first screen.
-- Live `/demo` seed, filtering, Reset, real-storage sentinel preservation, no off-origin demo traffic, and Start-for-real cleanup.
-- Live service-worker registration and offline `/demo` reload.
-- Live route metadata/status sweep, 404 response, link crawl, route focus/back behavior, and axe scan on `/`, `/demo`, `/audit`, `/history`, `/privacy`, and `/terms`.
-- Clean `--no-local` clone at the reviewed commit, followed by `npm ci` and all 23 exact commands from `.factory/claims.json`; all passed one matching test.
-- Full clean `npm test`: 38/38 passed; `dist/site/` was produced. Initial JavaScript was 36.34 kB raw / 12.98 kB gzip.
-- Each finding from review rounds 1 and 2 was rechecked against live behavior and source/tests.
+- Final clean remote clone: `/tmp/photo-upload-audit-final.jNyDXR/repo` at `d79b8eb`.
+  - `npm ci`: passed, zero reported vulnerabilities.
+  - Every one of the 24 exact claim commands in `.factory/claims.json`: passed, one matching tagged test each.
+  - `npm test`: **42 passed**. Evidence: `test-results/polish-3-final-clean.log`.
+- Build: `npm run build:site` passed and produced `dist/site/`.
+  - Initial JS: 36.37 kB raw / 12.99 kB gzip.
+  - CSS: 20.13 kB raw / 5.35 kB gzip.
+- Production deployment: Azure Static Web Apps deployment `937693bb-a948-45fc-abda-d73cf1548b7a` completed successfully.
+  - Live HTML serves `assets/index-BRjBS_92.js`, matching the final build.
+  - Live `/does-not-exist` returns HTTP 404 with the styled archive page.
+  - Cold live report: `test-results/polish-3-live/report.json`.
+  - Worker URL verifier passed for `/` and `/?demo=1`: `test-results/polish-3-live-verify-home/verify.json`, `test-results/polish-3-live-verify-demo/verify.json`.
+  - Live Playwright axe sweep found zero serious or critical issues on `/`, `/demo`, `/audit`, `/history`, `/privacy`, and `/terms`.
+  - Lighthouse mobile: Performance **100**, Accessibility **100**, LCP **1.8 s**, CLS **0** (`test-results/polish-3-lighthouse.json`).
 
-## Next steps
+## Known gaps and operator notes
 
-- Repair F-3-1 and add exhaustive 390 px geometry/font-size tests.
-- Add the reset claim and tagged test described in F-3-2.
-- Run the full review again; do not mark the product accepted until it has zero findings.
+No acceptance findings remain.
+
+Desktop installers are intentionally unsigned and honestly disclosed for v0.1.2. If signing becomes required, the operator needs to provide `APPLE_CERTIFICATE` and `WINDOWS_CERT_PFX` to the release workflow; no signing secrets are stored in this repository.
