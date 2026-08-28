@@ -27,7 +27,7 @@ let releaseMemoryCache: { at: number; data: Release } | undefined;
 const routeMeta: Record<string, { title: string; description: string }> = {
   '/': { title: 'Photo Upload Audit — Check photo backups', description: 'Check a camera export against a backup folder. Find missing, changed, skipped, duplicate, and unpaired Live Photo files.' },
   '/demo': { title: 'Demo — Photo Upload Audit', description: 'Try a complete photo backup audit with sample files.' },
-  '/audit': { title: 'Audit folders — Photo Upload Audit', description: 'Choose two local folders and compare every media file by SHA-256.' },
+  '/audit': { title: 'Audit folders — Photo Upload Audit', description: 'Choose two local folders. Supported media is compared by SHA-256, and unchecked files stay visible.' },
   '/history': { title: 'Saved receipts — Photo Upload Audit', description: 'Review saved local photo backup audit receipts.' },
   '/privacy': { title: 'Privacy — Photo Upload Audit', description: 'How Photo Upload Audit handles files and license data.' },
   '/terms': { title: 'Terms — Photo Upload Audit', description: 'Terms for using Photo Upload Audit.' },
@@ -84,7 +84,7 @@ function home(): string {
   return `
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">A receipt for your camera roll</p>
+        <p class="eyebrow">Compare a camera export with its backup</p>
         <h1>Check every photo before clearing space</h1>
         <p class="lede">For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space.</p>
         <div class="hero-action">
@@ -139,9 +139,9 @@ function checkIcon(): string {
 
 function miniReceipt(): string {
   const rows = [
-    ['verified', 'IMG_1842.HEIC', 'SHA-256 match'],
+    ['verified', 'IMG_1842.HEIC', 'File contents match'],
     ['missing', 'IMG_1844.HEIC', 'No backup file'],
-    ['changed', 'IMG_1843.HEIC', 'Same name, different hash'],
+    ['changed', 'IMG_1843.HEIC', 'Same name, different contents'],
     ['duplicate', 'IMG_1845.HEIC', '2 matching copies'],
   ];
   return `<div class="mini-receipt"><div class="receipt-head"><span>STATUS</span><span>CAMERA EXPORT</span><span>RESULT</span></div>${rows.map(([status, name, note]) => `<div class="receipt-row"><span class="status ${status}">${status}</span><strong>${name}</strong><span>${note}</span></div>`).join('')}</div>`;
@@ -152,11 +152,11 @@ function walkFrame(number: string, title: string, text: string, visual: string):
 }
 
 function downloadsSection(): string {
-  return `<section class="downloads section-grid" aria-labelledby="download-title"><div class="section-intro"><p class="eyebrow">Desktop app</p><h2 id="download-title">Install it where your archive lives</h2><p>Desktop installers for v${__APP_VERSION__} are unsigned.</p></div><div class="download-panel" data-downloads><div class="download-status"><span class="spinner" aria-hidden="true"></span><p>Checking desktop releases…</p></div><a class="arrow-link" href="https://github.com/B-Divyesh/sf-photo-upload-audit/releases" rel="external">View all releases <span class="sr-only">(external site)</span></a></div></section>`;
+  return `<section class="downloads section-grid" aria-labelledby="download-title"><div class="section-intro"><p class="eyebrow">Desktop app</p><h2 id="download-title">Download the desktop app</h2><p>Desktop installers for v${__APP_VERSION__} are unsigned.</p></div><div class="download-panel" data-downloads><div class="download-status"><span class="spinner" aria-hidden="true"></span><p>Checking desktop releases…</p></div><a class="arrow-link" href="https://github.com/B-Divyesh/sf-photo-upload-audit/releases" rel="external">View all releases <span class="sr-only">(external site)</span></a></div></section>`;
 }
 
 function paidSection(): string {
-  return `<section class="paid section-grid" aria-labelledby="paid-title"><div class="section-intro"><p class="eyebrow">Archive License</p><h2 id="paid-title">Keep up to 25 audit receipts</h2><p>$19 one-time. Save up to 25 local audit receipts and print verification certificates. Scanning and CSV export stay free.</p></div><div class="license-panel"><p class="license-price"><strong>$19</strong><span>one-time purchase</span></p><a class="button primary" href="${checkoutUrl}">Buy Archive License</a><a class="text-link" href="/history" data-nav>Review saved receipts</a><button class="text-button" data-action="show-license">Enter license token</button><form class="license-form" data-license-form hidden><label for="license-token">License token</label><div><input id="license-token" name="license" autocomplete="off" required /><button class="button secondary" type="submit">Verify license</button></div><p class="form-note" data-license-note aria-live="polite"></p></form><p class="fine-print">Sociobot/Dodo processes your payment. <a href="mailto:support@sociobot.in">Email support@sociobot.in</a> with billing questions.</p></div></section>`;
+  return `<section class="paid section-grid" aria-labelledby="paid-title"><div class="section-intro"><p class="eyebrow">Archive License</p><h2 id="paid-title">Keep up to 25 audit receipts</h2><p>$19 one-time. Save up to 25 local audit receipts and print verification certificates. Scanning and CSV export stay free.</p></div><div class="license-panel"><p class="license-price"><strong>$19</strong><span>one-time purchase</span></p><a class="button primary" href="${checkoutUrl}" rel="external">Buy Archive License <span class="external-label">(external checkout)</span></a><a class="text-link" href="/history" data-nav>Review saved receipts</a><button class="text-button" data-action="show-license">Enter license token</button><form class="license-form" data-license-form hidden><label for="license-token">License token</label><div><input id="license-token" name="license" autocomplete="off" required /><button class="button secondary" type="submit">Verify license</button></div><p class="form-note" data-license-note aria-live="polite"></p></form><p class="fine-print">Sociobot/Dodo processes your payment. <a href="mailto:support@sociobot.in">Email support@sociobot.in</a> with billing questions.</p></div></section>`;
 }
 
 function auditPage(): string {
@@ -176,7 +176,7 @@ function pickerView(): string {
       <div class="compare-mark" aria-hidden="true">→</div>
       ${folderPicker('destination', '2 · Backup folder', state.destination)}
     </div>
-    ${state.error ? `<div class="error-message" role="alert"><strong>The audit did not start.</strong><span>${escapeHtml(state.error)} Choose both folders and try again.</span></div>` : ''}
+    ${state.error ? `<div class="error-message" role="alert"><strong>The audit did not start.</strong><span>${escapeHtml(state.error)}</span></div>` : ''}
     ${state.busy && progress ? `<div class="scan-progress" role="status" aria-live="polite"><div><span>${progress.stage === 'compare' ? 'Comparing files' : `Hashing ${progress.stage}`}</span><strong>${progress.current} / ${progress.total}</strong></div><progress max="${Math.max(progress.total, 1)}" value="${progress.current}"></progress><p>${escapeHtml(progress.fileName || 'Building the receipt…')}</p><i class="scan-beam" aria-hidden="true"></i></div>` : `<div class="scan-action"><button class="button primary" data-action="scan" ${state.source.length && state.destination.length ? '' : 'disabled'}>Compare every file</button><span>Read-only. Large folders can take time.</span></div>`}
   </section>`;
 }
@@ -206,7 +206,7 @@ function resultView(): string {
 }
 
 function legalPage(kind: 'privacy' | 'terms'): string {
-  if (kind === 'privacy') return `<article class="legal"><p class="eyebrow">Policy</p><h1>Privacy without a photo upload</h1><p class="updated">Effective 28 August 2026</p><h2>Files stay local</h2><p>Photo Upload Audit reads only the folders you choose. Media contents, names, hashes, and reports are not sent to us.</p><h2>Data stored on your device</h2><p>The web app stores its offline shell. A paid license can also store audit receipts in your browser. Demo data uses memory only and is discarded when you leave demo mode.</p><h2>License checks</h2><p>If you add a license, the app sends that token to the Sociobot billing API. It does not send photo data with the request.</p><h2>No analytics</h2><p>This version has no analytics, advertising, or tracking scripts.</p><h2>Your choices</h2><p>Clear this site's browser storage to remove a saved license and receipts. Uninstalling may leave local app data behind. Check your operating system's app-data location before sharing the computer.</p><h2>Contact</h2><p>Email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a> with a privacy question.</p></article>`;
+  if (kind === 'privacy') return `<article class="legal"><p class="eyebrow">Policy</p><h1>Privacy without a photo upload</h1><p class="updated">Effective 28 August 2026</p><h2>Files stay local</h2><p>Photo Upload Audit reads only the folders you choose. Media contents, names, hashes, and reports are not sent to us.</p><h2>Data stored on your device</h2><p>The web app stores its offline shell. A paid license can also store audit receipts in your browser. Demo data uses memory only and is discarded when you leave demo mode.</p><h2>License checks</h2><p>If you add a license, the app sends that token to the Sociobot billing API. It does not send photo data with the request.</p><h2>No analytics</h2><p>This version has no analytics, advertising, or tracking scripts.</p><h2>Your choices</h2><p>Use Clear saved data to remove the saved license and audit receipts from this browser.</p><button class="button secondary" data-action="clear-saved-data">Clear saved data</button><p class="form-note" data-clear-data-note aria-live="polite"></p><p>Uninstalling may leave local app data behind. Check your operating system's app-data location before sharing the computer.</p><h2>Contact</h2><p>Email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a> with a privacy question.</p></article>`;
   return `<article class="legal"><p class="eyebrow">Terms</p><h1>Terms for using the audit</h1><p class="updated">Effective 28 August 2026</p><h2>What the app does</h2><p>The app compares selected files and reports what it finds.</p><h2>Your responsibility</h2><p>Keep a second backup and complete a restore test before deleting originals.</p><h2>Archive License</h2><p>The Archive License costs $19 once. It adds saved receipts and printable certificates. Sociobot/Dodo processes your payment. Email <a href="mailto:support@sociobot.in">support@sociobot.in</a> with billing questions.</p><h2>Warranty</h2><p>The software is provided as-is under the MIT License. We do not promise that storage hardware, operating systems, or unrelated backup tools will work.</p><h2>Acceptable use</h2><p>Do not use the billing service unlawfully or try to bypass license checks.</p><h2>Contact</h2><p>Email <a href="mailto:support@sociobot.in">support@sociobot.in</a> with a terms question.</p></article>`;
 }
 
@@ -230,6 +230,10 @@ async function render(focusHeading = false): Promise<void> {
   const meta = routeMeta[path];
   document.title = meta.title;
   document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', meta.description);
+  document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', meta.title);
+  document.querySelector<HTMLMetaElement>('meta[property="og:description"]')?.setAttribute('content', meta.description);
+  document.querySelector<HTMLMetaElement>('meta[name="twitter:title"]')?.setAttribute('content', meta.title);
+  document.querySelector<HTMLMetaElement>('meta[name="twitter:description"]')?.setAttribute('content', meta.description);
   document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', `https://photo-upload-audit.sociobot.in${path === '/' ? '/' : path}`);
   if (state.demo && (changingDemoMode || !state.result)) state.result = await makeSampleAudit();
   if (!state.demo && path !== '/audit') state.result = undefined;
@@ -256,7 +260,7 @@ function bindEvents(): void {
     const kind = input.dataset.folder as 'source' | 'destination';
     delete directoryHandles[kind];
     state[kind] = toMediaFiles(input.files ?? []);
-    state.error = state[kind].length ? '' : 'That folder contains no files.';
+    state.error = state[kind].length ? '' : 'That folder contains no files. Choose a folder that contains files.';
     void render();
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-action="choose-folder"]').forEach((button) => button.addEventListener('click', () => void chooseDirectory(button.dataset.folderKind as 'source' | 'destination')));
@@ -267,6 +271,7 @@ function bindEvents(): void {
   document.querySelector('[data-action="export-csv"]')?.addEventListener('click', exportCsv);
   document.querySelector('[data-action="save-receipt"]')?.addEventListener('click', saveReceipt);
   document.querySelector('[data-action="print"]')?.addEventListener('click', () => print());
+  document.querySelector('[data-action="clear-saved-data"]')?.addEventListener('click', clearSavedData);
   document.querySelectorAll<HTMLButtonElement>('[data-open-receipt]').forEach((button) => button.addEventListener('click', () => {
     const receipt = receiptHistory()[Number(button.dataset.openReceipt)];
     if (!receipt) return;
@@ -297,9 +302,9 @@ function bindEvents(): void {
 }
 
 async function runScan(): Promise<void> {
-  if (!state.source.length || !state.destination.length) { state.error = 'A source folder or backup folder is missing.'; await render(); return; }
+  if (!state.source.length || !state.destination.length) { state.error = 'Choose both a camera export and backup folder, then compare again.'; await render(); return; }
   if (directoryHandles.source && directoryHandles.destination && await directoryHandles.source.isSameEntry(directoryHandles.destination)) {
-    state.error = 'Choose two different folders. The source and backup folder are the same folder.';
+    state.error = 'The source and backup folder are the same folder. Choose a different backup folder, then compare again.';
     await render();
     return;
   }
@@ -345,10 +350,10 @@ async function chooseDirectory(kind: 'source' | 'destination'): Promise<void> {
     const handle = await picker();
     directoryHandles[kind] = handle;
     state[kind] = await filesFromDirectory(handle);
-    state.error = state[kind].length ? '' : 'That folder contains no files.';
+    state.error = state[kind].length ? '' : 'That folder contains no files. Choose a folder that contains files.';
     await render();
   } catch (error) {
-    if ((error as DOMException).name !== 'AbortError') { state.error = 'That folder could not be read. Choose it again.'; await render(); }
+    if ((error as DOMException).name !== 'AbortError') { state.error = 'That folder could not be read. Choose that folder again.'; await render(); }
   }
 }
 
@@ -399,6 +404,15 @@ function saveReceipt(): void {
   state.receiptNote = 'Receipt saved locally. Open receipt history to review it.';
   const button = document.querySelector<HTMLButtonElement>('[data-action="save-receipt"]');
   if (button) { button.textContent = 'Receipt saved'; button.disabled = true; }
+}
+
+function clearSavedData(): void {
+  localStorage.removeItem('audit:receipts');
+  localStorage.removeItem('sb_license:photo-upload-audit');
+  localStorage.removeItem('sb_license_verdict:photo-upload-audit');
+  state.paid = false;
+  const note = document.querySelector<HTMLElement>('[data-clear-data-note]');
+  if (note) note.textContent = 'Saved license and audit receipts cleared from this browser.';
 }
 
 async function loadDownloads(): Promise<void> {

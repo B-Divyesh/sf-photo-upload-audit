@@ -5,7 +5,7 @@ const origin = 'https://photo-upload-audit.sociobot.in';
 const routes = {
   '/': ['Photo Upload Audit — Check photo backups', 'Check a camera export against a backup folder. Find missing, changed, skipped, duplicate, and unpaired Live Photo files.'],
   '/demo': ['Demo — Photo Upload Audit', 'Try a complete photo backup audit with sample files.'],
-  '/audit': ['Audit folders — Photo Upload Audit', 'Choose two local folders and compare every media file by SHA-256.'],
+  '/audit': ['Audit folders — Photo Upload Audit', 'Choose two local folders. Supported media is compared by SHA-256, and unchecked files stay visible.'],
   '/history': ['Saved receipts — Photo Upload Audit', 'Review saved local photo backup audit receipts.'],
   '/privacy': ['Privacy — Photo Upload Audit', 'How Photo Upload Audit handles files and license data.'],
   '/terms': ['Terms — Photo Upload Audit', 'Terms for using Photo Upload Audit.'],

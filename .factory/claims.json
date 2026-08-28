@@ -42,6 +42,13 @@
     "sandbox": "fresh browser context; compare matched JPG and TIFF files plus an unsupported PSD source file, then assert its skipped row and no all-clear"
   },
   {
+    "id": "audit-supported-media",
+    "claim": "Supported media is compared by SHA-256, and unchecked files stay visible",
+    "where": "Audit route metadata and audit screen",
+    "test": "npm test -- --grep @claim:audit-supported-media",
+    "sandbox": "fresh browser context; inspect the Audit metadata, compare a supported JPG with an unsupported PSD, and assert the skipped PSD remains in the receipt"
+  },
+  {
     "id": "live-photo",
     "claim": "Reports complete and unpaired Live Photo files",
     "where": "landing copy, demo receipt, README",
@@ -89,6 +96,20 @@
     "where": "landing paid section, terms page, README",
     "test": "npm test -- --grep @claim:archive-license",
     "sandbox": "fresh browser context with a cached valid test verdict; complete a fixture audit, save it, and invoke print"
+  },
+  {
+    "id": "receipt-metadata-only",
+    "claim": "Saved receipts do not include original media files",
+    "where": "saved receipt history",
+    "test": "npm test -- --grep @claim:receipt-metadata-only",
+    "sandbox": "fresh browser context with a cached valid test verdict; save a fixture audit and recursively inspect the stored receipt for files, blobs, bytes, data URLs, and object URLs"
+  },
+  {
+    "id": "browser-data-removal",
+    "claim": "Clear saved data removes the saved license and audit receipts from this browser",
+    "where": "privacy page",
+    "test": "npm test -- --grep @claim:browser-data-removal",
+    "sandbox": "fresh browser context with seeded license, verdict, and receipt data; use Clear saved data, reload, and inspect all three storage keys"
   },
   {
     "id": "receipt-removal",

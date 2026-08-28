@@ -97,6 +97,15 @@ test('history navigation restores routes and heading focus', async ({ page }) =>
   await expect(page.locator('h1')).toBeFocused();
 });
 
+test('the ?demo=1 entry point exposes demo metadata after it loads', async ({ page }) => {
+  await page.goto('/?demo=1');
+  await expect(page).toHaveTitle('Demo — Photo Upload Audit');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'Try a complete photo backup audit with sample files.');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Demo — Photo Upload Audit');
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute('content', 'Demo — Photo Upload Audit');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://photo-upload-audit.sociobot.in/demo');
+});
+
 test('@claim:same-folder-safe rejects the same directory handle and accepts different same-named handles', async ({ page }) => {
   await page.addInitScript(() => {
     const file = (name: string, body: string) => new File([body], name, { type: 'image/jpeg', lastModified: 1 });
@@ -109,11 +118,22 @@ test('@claim:same-folder-safe rejects the same directory handle and accepts diff
   await page.getByRole('button', { name: 'Choose export folder' }).click();
   await page.getByRole('button', { name: 'Choose backup folder' }).click();
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByRole('alert')).toContainText('Choose two different folders');
+  await expect(page.getByRole('alert')).toContainText('The source and backup folder are the same folder. Choose a different backup folder, then compare again.');
   await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
   await page.getByRole('button', { name: 'Choose backup folder' }).click();
   await page.getByRole('button', { name: 'Compare every file' }).click();
   await expect(page.getByText('1 source file needs attention')).toBeVisible();
+});
+
+test('folder-selection errors name the next action that can fix them', async ({ page }) => {
+  await page.goto('/audit');
+  await page.locator('#source-folder').evaluate((input) => {
+    const transfer = new DataTransfer();
+    const folderInput = input as HTMLInputElement;
+    folderInput.files = transfer.files;
+    folderInput.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await expect(page.getByRole('alert')).toContainText('That folder contains no files. Choose a folder that contains files.');
 });
 
 test('@claim:scan-progress keeps the current file and count visible during hashing', async ({ page }) => {
@@ -146,12 +166,23 @@ test('@claim:source-first keeps source before backup on desktop and mobile', asy
 });
 
 test('pre-rendered routes publish route-specific metadata and a real 404 configuration', async () => {
-  const expectations: Record<string, string> = { 'demo.html': 'Demo — Photo Upload Audit', 'audit.html': 'Audit folders — Photo Upload Audit', 'privacy.html': 'Privacy — Photo Upload Audit', 'terms.html': 'Terms — Photo Upload Audit', '404.html': 'Page not found — Photo Upload Audit' };
-  for (const [file, title] of Object.entries(expectations)) {
+  const expectations: Record<string, { title: string; description?: string }> = {
+    'demo.html': { title: 'Demo — Photo Upload Audit' },
+    'audit.html': { title: 'Audit folders — Photo Upload Audit', description: 'Choose two local folders. Supported media is compared by SHA-256, and unchecked files stay visible.' },
+    'privacy.html': { title: 'Privacy — Photo Upload Audit' },
+    'terms.html': { title: 'Terms — Photo Upload Audit' },
+    '404.html': { title: 'Page not found — Photo Upload Audit' },
+  };
+  for (const [file, expectation] of Object.entries(expectations)) {
     const html = await readFile(`dist/site/${file}`, 'utf8');
-    expect(html).toContain(`<title>${title}</title>`);
-    expect(html).toContain(`property="og:title" content="${title}"`);
-    expect(html).toContain(`name="twitter:title" content="${title}"`);
+    expect(html).toContain(`<title>${expectation.title}</title>`);
+    expect(html).toContain(`property="og:title" content="${expectation.title}"`);
+    expect(html).toContain(`name="twitter:title" content="${expectation.title}"`);
+    if (expectation.description) {
+      expect(html).toContain(`name="description" content="${expectation.description}"`);
+      expect(html).toContain(`property="og:description" content="${expectation.description}"`);
+      expect(html).toContain(`name="twitter:description" content="${expectation.description}"`);
+    }
   }
   const config = JSON.parse(await readFile('dist/site/staticwebapp.config.json', 'utf8')) as { responseOverrides: { '404': { rewrite: string; statusCode: number } } };
   expect(config.responseOverrides['404']).toEqual({ rewrite: '/404.html', statusCode: 404 });
@@ -217,6 +248,21 @@ test('landing uses a plain-language progress heading', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('Follow the file check', { exact: true })).toBeVisible();
   await expect(page.getByText('Watch each hash', { exact: true })).toHaveCount(0);
+});
+
+test('landing uses plain preview labels and identifies the external checkout', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Compare a camera export with its backup', { exact: true })).toBeVisible();
+  await expect(page.getByText('File contents match', { exact: true })).toBeVisible();
+  await expect(page.getByText('Same name, different contents', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Download the desktop app' })).toBeVisible();
+  const checkout = page.getByRole('link', { name: 'Buy Archive License (external checkout)' });
+  await expect(checkout).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout');
+  await expect(checkout).toHaveAttribute('rel', 'external');
+  await expect(page.getByText('A receipt for your camera roll', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('SHA-256 match', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Same name, different hash', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Install it where your archive lives', { exact: true })).toHaveCount(0);
 });
 
 test('terms advise safe deletion without claiming to replace a backup, and public copy stays plain', async ({ page }) => {

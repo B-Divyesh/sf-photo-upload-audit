@@ -1,10 +1,10 @@
 # Landing page copy audit
 
-Audited 2026-08-28 for polish round 5. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
+Audited 2026-08-28 for polish round 6. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
 
 | Landing text | Words | Flag |
 |---|---:|---|
-| A receipt for your camera roll | 6 | — |
+| Compare a camera export with its backup | 7 | — |
 | Check every photo before clearing space | 6 | — |
 | For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space. | 16 | — |
 | Try it with sample data | 5 | — |
@@ -15,6 +15,10 @@ Audited 2026-08-28 for polish round 5. Counts treat hyphenated terms, numbers, p
 | See which files match or need attention | 8 | — |
 | The app compares each file’s contents, even when its name changed. | 11 | — |
 | Audit your folders | 3 | — |
+| File contents match | 3 | — |
+| No backup file | 3 | — |
+| Same name, different contents | 5 | — |
+| 2 matching copies | 3 | — |
 | Compare without changing either folder | 5 | — |
 | Choose the export | 3 | — |
 | Select the folder copied from your phone. | 7 | — |
@@ -29,7 +33,7 @@ Audited 2026-08-28 for polish round 5. Counts treat hyphenated terms, numbers, p
 | The current file and count stay visible. | 7 | — |
 | Review files that need attention | 5 | — |
 | Each row says what happened. | 5 | — |
-| Install it where your archive lives | 6 | — |
+| Download the desktop app | 4 | — |
 | Desktop installers for v0.1.2 are unsigned. | 6 | — |
 | Checking desktop releases… | 3 | — |
 | View all releases | 3 | — |
@@ -44,7 +48,7 @@ Audited 2026-08-28 for polish round 5. Counts treat hyphenated terms, numbers, p
 | $19 one-time. | 2 | — |
 | Save up to 25 local audit receipts and print verification certificates. | 11 | — |
 | Scanning and CSV export stay free. | 6 | — |
-| Buy Archive License | 3 | — |
+| Buy Archive License (external checkout) | 5 | — |
 | Review saved receipts | 3 | — |
 | Enter license token | 3 | — |
 | Sociobot/Dodo processes your payment. | 4 | — |
@@ -66,9 +70,11 @@ Audited 2026-08-28 for polish round 5. Counts treat hyphenated terms, numbers, p
 | Saved paid audit output | saved receipt |
 | Seeded isolated experience | demo |
 
-## Round-5 checks
+## Round-6 checks
 
 - The first screen says the job, audience, first action, outcome, and three plain facts in one viewport at 390 px and 1440 px.
 - “Every” is backed by a receipt that lists every selected source entry. Unsupported entries are shown as skipped and prevent the all-clear.
 - The site uses **Live Photo pair** everywhere; “sidecar,” “merchant of record,” and “local-first” are absent from public copy.
 - Terms gives deletion advice without claiming that the product replaces a backup or restore test.
+- The Audit description names the supported-media boundary and says unchecked files remain visible.
+- Saved receipt history says original media files are not included. Privacy offers a labelled control to clear saved license and receipt data.

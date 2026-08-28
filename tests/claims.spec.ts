@@ -130,6 +130,28 @@ test('@claim:all-files-reported lists unsupported source files and prevents an a
   await expect(page.locator('.filename', { hasText: 'IMG_0002.tif' })).toBeVisible();
 });
 
+test('@claim:audit-supported-media describes and shows the supported-media audit boundary', async ({ page }) => {
+  await page.goto('/audit');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'Choose two local folders. Supported media is compared by SHA-256, and unchecked files stay visible.');
+  const selectFiles = async (selector: string, files: Array<{ name: string; body: string; type: string }>) => {
+    await page.locator(selector).evaluate((input, selected) => {
+      const transfer = new DataTransfer();
+      for (const file of selected) transfer.items.add(new File([file.body], file.name, { type: file.type, lastModified: 1_700_000_000_000 }));
+      const folderInput = input as HTMLInputElement;
+      folderInput.files = transfer.files;
+      folderInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }, files);
+  };
+  await selectFiles('#source-folder', [
+    { name: 'IMG_0001.jpg', body: 'matched-jpg', type: 'image/jpeg' },
+    { name: 'IMG_0002.psd', body: 'unchecked', type: 'image/vnd.adobe.photoshop' },
+  ]);
+  await selectFiles('#destination-folder', [{ name: 'backup-copy.jpg', body: 'matched-jpg', type: 'image/jpeg' }]);
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await expect(page.getByRole('button', { name: 'skipped 1' })).toBeVisible();
+  await expect(page.locator('.filename', { hasText: 'IMG_0002.psd' })).toBeVisible();
+});
+
 test('@claim:live-photo identifies complete and unpaired Live Photo files', async ({ page }) => {
   await page.goto('/demo');
   await expect(page.getByText('Live Photo: complete').first()).toBeVisible();
@@ -209,7 +231,7 @@ test('@claim:archive-license saves receipts and prints certificates', async ({ p
   });
   await page.goto('/');
   await expect(page.getByText('$19', { exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Buy Archive License' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout');
+  await expect(page.getByRole('link', { name: /Buy Archive License/ })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout');
   await page.goto('/audit');
   await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
@@ -223,6 +245,59 @@ test('@claim:archive-license saves receipts and prints certificates', async ({ p
   await page.evaluate(() => { window.print = () => localStorage.setItem('test:printed', 'yes'); });
   await page.getByRole('button', { name: 'Print certificate' }).click();
   expect(await page.evaluate(() => localStorage.getItem('test:printed'))).toBe('yes');
+});
+
+test('@claim:receipt-metadata-only saves receipt metadata without original media files', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:photo-upload-audit', 'cached-test-token');
+    localStorage.setItem('sb_license_verdict:photo-upload-audit', JSON.stringify({ valid: true, checkedAt: Date.now() }));
+  });
+  await page.goto('/audit');
+  await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
+  await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Save receipt' }).click();
+  const stored = await page.evaluate(() => {
+    const raw = localStorage.getItem('audit:receipts') || '[]';
+    const violations: string[] = [];
+    const inspect = (value: unknown, path = 'receipt'): void => {
+      if (value instanceof File) violations.push(`${path}: File`);
+      if (value instanceof Blob) violations.push(`${path}: Blob`);
+      if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) violations.push(`${path}: binary`);
+      if (typeof value === 'string' && /^(data:|blob:)/i.test(value)) violations.push(`${path}: URL`);
+      if (value && typeof value === 'object') {
+        for (const [key, child] of Object.entries(value)) {
+          if (/^(file|bytes|buffer)$/i.test(key)) violations.push(`${path}.${key}: persisted media field`);
+          inspect(child, `${path}.${key}`);
+        }
+      }
+    };
+    const parsed = JSON.parse(raw);
+    inspect(parsed);
+    return { raw, count: parsed.length, violations };
+  });
+  expect(stored.count).toBe(1);
+  expect(stored.violations).toEqual([]);
+  expect(stored.raw).not.toMatch(/^(data:|blob:)/i);
+});
+
+test('@claim:browser-data-removal clears the saved license, verdict, and receipts', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('browser-data-removal-seeded')) return;
+    sessionStorage.setItem('browser-data-removal-seeded', 'yes');
+    localStorage.setItem('sb_license:photo-upload-audit', 'test-token');
+    localStorage.setItem('sb_license_verdict:photo-upload-audit', JSON.stringify({ valid: true, checkedAt: Date.now() }));
+    localStorage.setItem('audit:receipts', JSON.stringify([{ id: 'saved-receipt' }]));
+  });
+  await page.goto('/privacy');
+  await page.getByRole('button', { name: 'Clear saved data' }).click();
+  await expect(page.getByText('Saved license and audit receipts cleared from this browser.')).toBeVisible();
+  await page.reload();
+  expect(await page.evaluate(() => ({
+    license: localStorage.getItem('sb_license:photo-upload-audit'),
+    verdict: localStorage.getItem('sb_license_verdict:photo-upload-audit'),
+    receipts: localStorage.getItem('audit:receipts'),
+  }))).toEqual({ license: null, verdict: null, receipts: null });
 });
 
 test('@claim:receipt-removal removes only the selected saved receipt after reload', async ({ page }) => {
