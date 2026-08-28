@@ -291,6 +291,9 @@ test('@claim:browser-data-removal clears the saved license, verdict, and receipt
   });
   await page.goto('/privacy');
   await page.getByRole('button', { name: 'Clear saved data' }).click();
+  await expect(page.getByText('This removes the saved license and all saved audit receipts from this browser.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove saved data' })).toBeFocused();
+  await page.getByRole('button', { name: 'Remove saved data' }).click();
   await expect(page.getByText('Saved license and audit receipts cleared from this browser.')).toBeVisible();
   await page.reload();
   expect(await page.evaluate(() => ({
