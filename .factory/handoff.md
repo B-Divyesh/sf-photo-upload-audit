@@ -1,54 +1,62 @@
-# Photo Upload Audit — independent verification handoff
+# Photo Upload Audit — repair handoff
 
 ## Status
 
-**FAIL — candidate `323425da1673e60e7234d851531639ee923d07ef` is not releasable.**
+Repair commit: `b79460d741530d1071eb42d893ef59cf3d769ea0`.
 
-Tested 28 August 2026 at `https://photo-upload-audit.sociobot.in`. The deployed HTML, JS, and CSS exactly match the candidate build, so this is not a deployment-only failure. Full evidence is in [`.factory/verification.md`](verification.md).
+This repair keeps the Tauri 2 desktop app and static landing deployment. It changes no researched product scope or successful free scanning behavior.
 
-## Release blockers
+## Fixed verifier findings
 
-### Critical
+- The audit rejects equal selected folder roots before scanning.
+- SHA-256 matches allocate one destination file per source file. Two identical source originals can no longer be proved by one backup file.
+- Live Photo pairing uses a path-and-stem index. Hashing reads `File.stream()` incrementally instead of materialising whole videos. The 100,000-file, pre-hashed comparison pilot passed in 2.1 seconds locally.
+- `/demo` does not read, write, or verify real license storage. Demo state stays in memory.
+- Folder inputs are visible, labelled native controls with a designed focus ring.
+- Paid saved receipts have a `/history` route that reopens or removes a receipt. A clear message appears at the 25-receipt local limit.
+- The service worker precaches the deployed fingerprinted JS and CSS at install, returns the app shell only for navigation fallbacks, and returns an error—not HTML—for unavailable assets.
+- Mobile controls and receipt text meet the 44 px/16 px product baseline, and landing and audit pages reflow at 390 px with 200% text size.
+- Claims now cover classifications, analytics, platform installers, receipt limit, checkout health, same-folder safety, and one-to-one matching.
+- Versions are `0.1.1`; the tagged release will therefore build binaries from this repair rather than the old `d5f2935` artifact.
 
-- Selecting the same folder for source and backup produces “Every source file is accounted for.”
-- Two identical-content source files are both marked verified by one destination file.
+The Sociobot checkout was rechecked live on 2026-08-28. It returns HTTP 303 to `checkout.dodopayments.com`; its prior 404 is no longer present.
 
-### High
+## Verification
 
-- The live $19 checkout returns HTTP 404.
-- Live Photo partner lookup is quadratic; 8,000 pre-hashed files per side took 17.0 seconds, and the 100,000-file pilot has not run.
-- Demo mode reads and rewrites real license storage and makes a verification request.
-- The core folder inputs receive focus while invisible (`1 × 1 px`, opacity 0).
-- Paid receipts are written to local storage but have no history/reopen UI.
-- The service worker omits JS/CSS from its durable shell cache and can return HTML for missing assets.
-- Public claims are missing claim entries and sufficiently observable tests.
+Clean install and static build:
 
-### Medium
+```sh
+npm ci
+npm run lint
+npm run build
+```
 
-- Multiple mobile touch targets are below 44 px and receipt text falls to 11.5–14.4 px.
-- 200% text resizing produces horizontal overflow.
-- Desktop release binaries were built from `d5f2935`, not the candidate commit.
+All passed. The production output is `dist/site/`; its current initial assets are 34.58 KB JS (12.50 KB gzip) and 19.99 KB CSS (5.32 KB gzip).
 
-### Low
+Browser and claim coverage, all passed:
 
-- The styled not-found route returns HTTP 200.
+```sh
+npm test
+npx playwright test tests/claims.spec.ts --reporter=line
+npx playwright test tests/site.spec.ts --reporter=line
+npx playwright test tests/performance.spec.ts --reporter=line
+```
 
-## Verification summary
+The full suite has 31 tests after the repair (17 claim tests, 13 route/mobile/accessibility tests, and the 100,000-file pilot). It checks desktop and 390 px mobile, keyboard focus, 200% text reflow, cold offline reload, response-safe service-worker behavior, no off-origin media flow, demo license isolation, receipt history, checkout redirect, and axe serious/critical violations across every route. `test-results/.last-run.json` records `passed` for the full run.
 
-- All 10 exact claim commands: pass after `npm ci`.
-- Cold first-read and one-click sample gate: pass.
-- `npm test`: 18/18 pass.
-- Exact `npm run build`: pass; JS 29.5 KB raw, CSS 18.5 KB raw.
-- Fresh Lighthouse mobile: 91 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 2.1 s, CLS 0.
-- Axe serious/critical: zero across all routes.
-- Live normal audit, renamed hash match, changed file, CSV export, invalid-input recovery, reduced motion, and normal 390 px layout: pass.
-- Live audit network privacy: no off-origin requests.
-- Verify API rate limit: first 429 on request 31, `Retry-After: 4`.
-- Release assets/checksum: pass; tested Windows setup SHA-256 matches.
-- Local Rust compile is blocked only by this verifier host's missing `glib-2.0`; release CI passed its native builds.
+Additional checks passed:
 
-## Reverify after repair
+```sh
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+npm audit --audit-level=high
+```
 
-Run `npm ci`, every exact `.factory/claims.json` command, `npm test`, and `npm run build`. Then repeat the two false-completeness fixtures, isolated demo/license fixture, cold durable-offline fixture, keyboard picker path, 200% mobile reflow, live checkout, 100,000-file pilot, rate-limit burst, deployment hash comparison, and release checksum check.
+`cargo check --locked --manifest-path src-tauri/Cargo.toml` is blocked in this worker because `glib-2.0.pc` is absent. This is a host dependency limitation, not a source error; `.github/workflows/release.yml` installs the required Linux Tauri system packages before building all desktop artifacts.
 
-No product code was modified during this verification.
+## Release and deployment
+
+Push `main` and tag `v0.1.1`. The existing release workflow builds unsigned macOS arm64/x64, Windows, and Linux artifacts plus `SHA256SUMS` and `latest.json`. The static deployment target remains `dist/site/`.
+
+## Needs operator action
+
+Desktop builds are intentionally unsigned. To sign production installers, add the release workflow secrets `APPLE_CERTIFICATE` and `WINDOWS_CERT_PFX` (and their associated passwords/notarization credentials if signing is enabled).
