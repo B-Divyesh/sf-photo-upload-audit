@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 
 const fixture = (name: string) => path.resolve('tests/fixtures', name);
 
@@ -9,6 +11,22 @@ test('@claim:demo-sandbox opens a finished sample audit', async ({ page }) => {
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await expect(page.getByText('2 source files need attention')).toBeVisible();
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
+});
+
+test('@claim:demo-to-real discards the receipt before real folder selection', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:photo-upload-audit', 'cached-test-token');
+    localStorage.setItem('sb_license_verdict:photo-upload-audit', JSON.stringify({ valid: true, checkedAt: Date.now() }));
+    localStorage.setItem('audit:receipts', '[]');
+  });
+  await page.goto('/?demo=1');
+  await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Start for real' }).click();
+  await expect(page).toHaveURL(/\/audit$/);
+  await expect(page.getByRole('button', { name: 'Compare every file' })).toBeDisabled();
+  await expect(page.getByText('IMG_1844.MOV', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Save receipt' })).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('audit:receipts'))).toBe('[]');
 });
 
 test('@claim:local-only sends no file data off origin', async ({ page }) => {
@@ -130,6 +148,21 @@ test('@claim:archive-license saves receipts and prints certificates', async ({ p
   expect(await page.evaluate(() => localStorage.getItem('test:printed'))).toBe('yes');
 });
 
+test('@claim:receipt-removal removes only the selected saved receipt after reload', async ({ page }) => {
+  await page.goto('/history');
+  await page.evaluate(() => localStorage.setItem('audit:receipts', JSON.stringify([
+    { id: 'first', sourceLabel: 'First export', destinationLabel: 'First backup', createdAt: '2026-08-01T00:00:00.000Z', sourceCount: 1, destinationCount: 1, rows: [], durationMs: 1 },
+    { id: 'second', sourceLabel: 'Second export', destinationLabel: 'Second backup', createdAt: '2026-08-02T00:00:00.000Z', sourceCount: 1, destinationCount: 1, rows: [], durationMs: 1 },
+  ])));
+  await page.reload();
+  await page.getByRole('button', { name: 'Remove' }).first().click();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('audit:receipts') || '[]').map((receipt: { id: string }) => receipt.id))).toEqual(['second']);
+  await page.reload();
+  await expect(page.getByText('First export')).toHaveCount(0);
+  await expect(page.getByText('Second export')).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('audit:receipts') || '[]').map((receipt: { id: string }) => receipt.id))).toEqual(['second']);
+});
+
 test('@claim:classifications reports missing changed duplicate and extra files', async ({ page }) => {
   await page.goto('/demo');
   for (const label of ['missing 1', 'changed 1', 'duplicate 1', 'extra 1']) {
@@ -160,6 +193,27 @@ test('@claim:desktop-downloads shows a usable detected-platform installer link',
   } }));
   await page.goto('/?release-preview=1');
   await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', /releases\/download\/v0\.1\.1\//);
+});
+
+test('@claim:release-integrity-files verifies a published release checksum', async ({ request }) => {
+  const response = await request.get('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest');
+  expect(response.ok()).toBe(true);
+  const release = await response.json() as { assets: Array<{ name: string; browser_download_url: string }> };
+  const sums = release.assets.find((asset) => asset.name === 'SHA256SUMS');
+  const manifest = release.assets.find((asset) => asset.name === 'latest.json');
+  expect(sums).toBeTruthy();
+  expect(manifest).toBeTruthy();
+  const sumText = await (await request.get(sums!.browser_download_url)).text();
+  const asset = release.assets.find((item) => /\.deb$/i.test(item.name))!;
+  expect(asset).toBeTruthy();
+  const bytes = await (await request.get(asset.browser_download_url)).body();
+  expect(createHash('sha256').update(bytes).digest('hex')).toBe(sumText.match(new RegExp(`^([a-f0-9]{64})\\s+\\*?${asset.name.replaceAll('.', '\\.')}$`, 'm'))?.[1]);
+});
+
+test('@claim:unsigned-installers names the exact unsigned release version', async ({ page }) => {
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { version: string };
+  await page.goto('/');
+  await expect(page.getByText(`Desktop installers for v${packageJson.version} are unsigned.`)).toBeVisible();
 });
 
 test('@claim:receipt-limit keeps at most 25 local receipts and explains the limit', async ({ page }) => {

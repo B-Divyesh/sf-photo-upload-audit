@@ -7,6 +7,13 @@
     "sandbox": "fresh browser context; open /demo and inspect the seeded receipt"
   },
   {
+    "id": "demo-to-real",
+    "claim": "Starting for real discards sample data before folder selection",
+    "where": "demo banner, README",
+    "test": "npm test -- --grep @claim:demo-to-real",
+    "sandbox": "fresh browser context with a cached valid license; leave /demo and inspect state and real receipt storage"
+  },
+  {
     "id": "local-only",
     "claim": "Media contents, names, hashes, and reports stay on this device",
     "where": "landing facts, privacy section, privacy page, README",
@@ -70,6 +77,13 @@
     "sandbox": "fresh browser context with a cached valid test verdict; complete a fixture audit, save it, and invoke print"
   },
   {
+    "id": "receipt-removal",
+    "claim": "You can remove a saved local receipt",
+    "where": "README, receipt history",
+    "test": "npm test -- --grep @claim:receipt-removal",
+    "sandbox": "fresh browser context with two saved receipt fixtures; remove one and reload history"
+  },
+  {
     "id": "classifications",
     "claim": "Reports missing, changed, duplicate, and extra files",
     "where": "landing preview, audit receipt, README",
@@ -91,6 +105,20 @@
     "sandbox": "fresh browser context; mock a published Linux release and assert the detected-platform download URL"
   },
   {
+    "id": "release-integrity-files",
+    "claim": "Desktop releases include SHA256SUMS and latest.json",
+    "where": "README, release workflow",
+    "test": "npm test -- --grep @claim:release-integrity-files",
+    "sandbox": "published GitHub release API; assert both assets and verify a published asset checksum"
+  },
+  {
+    "id": "unsigned-installers",
+    "claim": "Desktop installers for v0.1.2 are unsigned",
+    "where": "landing desktop section, release workflow",
+    "test": "npm test -- --grep @claim:unsigned-installers",
+    "sandbox": "fresh browser context; inspect the versioned installer status"
+  },
+  {
     "id": "receipt-limit",
     "claim": "The Archive License saves up to 25 local receipts",
     "where": "paid tier, README",
@@ -106,10 +134,24 @@
   },
   {
     "id": "same-folder-safe",
-    "claim": "The app rejects selecting the same folder as source and backup",
+    "claim": "The app rejects the same folder and accepts different folders with the same name",
     "where": "README, audit error state",
     "test": "npm test -- --grep @claim:same-folder-safe",
-    "sandbox": "fresh browser context; select the same directory fixture for both folder inputs and attempt an audit"
+    "sandbox": "fresh browser context; use directory handles to select the same folder, then two distinct folders named DCIM"
+  },
+  {
+    "id": "scan-progress",
+    "claim": "The current file and count stay visible while scanning",
+    "where": "landing walkthrough, audit page",
+    "test": "npm test -- --grep @claim:scan-progress",
+    "sandbox": "fresh browser context with delayed fixture streams; observe the current file and increasing count"
+  },
+  {
+    "id": "source-first",
+    "claim": "Source is always first",
+    "where": "landing walkthrough, audit page",
+    "test": "npm test -- --grep @claim:source-first",
+    "sandbox": "fresh browser context at desktop and 390px; assert source precedes backup in DOM and visual flow"
   },
   {
     "id": "one-to-one-match",

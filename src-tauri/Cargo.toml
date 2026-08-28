@@ -1,6 +1,6 @@
 [package]
 name = "photo-upload-audit"
-version = "0.1.0"
+version = "0.1.2"
 description = "Verify a camera export against a backup folder"
 authors = ["Param Factory"]
 edition = "2021"

@@ -12,9 +12,8 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | Files stay on this device | 5 | — |
 | Works without an account | 4 | — |
 | Core audit and CSV are free | 6 | — |
-| One answer for every file | 5 | — |
-| Hashes prove file contents. | 4 | — |
-| Names only help explain a mismatch. | 6 | — |
+| See which files match or need attention | 8 | — |
+| The app compares each file’s contents, even when its name changed. | 11 | — |
 | Audit your folders | 3 | — |
 | Compare without changing either folder | 5 | — |
 | Choose the export | 3 | — |
@@ -23,31 +22,29 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | Select the disk or server folder that should contain it. | 10 | — |
 | Read the receipt | 3 | — |
 | Review missing, changed, duplicate, extra, and unpaired files. | 8 | — |
-| From folders to proof | 4 | — |
+| Compare two folders in three steps | 6 | — |
 | Pick both folders | 3 | — |
-| Source always stays on the left. | 6 | — |
+| Source is always first. | 4 | — |
 | Watch each hash | 3 | — |
 | The current file and count stay visible. | 7 | — |
-| Resolve exceptions | 2 | — |
+| Review files that need attention | 5 | — |
 | Each row says what happened. | 5 | — |
 | Install it where your archive lives | 6 | — |
-| The app is unsigned in v0.1. | 6 | — |
-| Your system may ask you to confirm the first launch. | 10 | — |
-| Your archive is not our library | 6 | — |
+| Desktop installers for v0.1.2 are unsigned. | 6 | — |
+| Your photo data stays on your device | 8 | — |
 | The app reads the folders you choose. | 7 | — |
 | It never moves, edits, or deletes media. | 7 | — |
 | No photo index or filename is sent to us. | 9 | — |
 | License checks send only the license token. | 7 | — |
 | It does not upload photos, recognise faces, or replace your backup tool. | 12 | — |
-| Keep a record of every audit | 6 | — |
+| Keep up to 25 audit receipts | 7 | — |
 | $19 one-time. | 2 | — |
 | Save up to 25 local audit receipts and print verification certificates. | 11 | — |
 | Scanning and CSV export stay free. | 6 | — |
 | Buy Archive License | 3 | — |
 | Review saved receipts | 3 | — |
-| Have a license? Paste it. | 5 | — |
+| Enter license token | 3 | — |
 | Sociobot/Dodo is the merchant of record. | 6 | — |
-| Refunds are handled there. | 4 | — |
 
 ## Terminology
 
@@ -61,3 +58,7 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | Optional paid entitlement | Archive License |
 | Saved paid audit output | receipt history |
 | Seeded isolated experience | demo |
+
+## Repair note
+
+Updated after review 1. The landing has no sentence over 22 words and no banned marketing word. Source is consistently the first folder rather than a left-only promise, so the wording remains true when controls stack on a phone.

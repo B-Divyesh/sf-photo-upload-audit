@@ -2,17 +2,17 @@
 
 Verify every original, video, and Live Photo sidecar before clearing your phone.
 
-Photo Upload Audit is for iPhone and Android owners who copy camera exports to a disk or server. It compares every supported media file by SHA-256 content, not timestamps. The receipt separates verified, missing, changed, duplicate, extra, and unpaired files. It refuses to compare a folder with itself and assigns each backup file to only one source original.
+Photo Upload Audit is for iPhone and Android owners who copy camera exports to a disk or server. It compares a SHA-256 fingerprint of each file’s contents, so changed timestamps do not affect the result. The receipt separates verified, missing, changed, duplicate, extra, and unpaired files. When a browser provides folder identity, it refuses the same folder twice; it never guesses from a shared folder name. Each backup file is assigned to only one source original.
 
 The scanner is read-only. Media contents, names, hashes, and reports stay on your device. Core scanning and CSV export work without an account or license.
 
 ## Try the sample
 
-Open [`/demo`](https://photo-upload-audit.sociobot.in/demo) to see a finished audit in one click. The sample stays in memory and never touches real folders. Reset it with **Reset demo**. The installed web app and sample audit work offline after the first visit.
+Open [`/demo`](https://photo-upload-audit.sociobot.in/demo) or [`?demo=1`](https://photo-upload-audit.sociobot.in/?demo=1) to see a finished audit in one click. The sample stays in memory and never touches real folders. **Start for real** clears it before opening folder selection. Reset it with **Reset demo**. The installed web app and sample audit work offline after the first visit.
 
 ## Run locally
 
-Requirements: Node.js 20 or newer. Rust stable and the Tauri 2 system dependencies are also needed for desktop development.
+Requirements: Node.js 20 or newer. Desktop development also needs Rust stable and the [Tauri prerequisites for your operating system](https://v2.tauri.app/start/prerequisites/).
 
 ```sh
 npm install
@@ -46,7 +46,7 @@ The desktop shell uses Tauri 2. Start it in development with:
 npm run tauri dev
 ```
 
-Tags matching `v*` run [the release workflow](.github/workflows/release.yml). It builds unsigned `.dmg`, `.msi` or `.exe`, `.AppImage`, and `.deb` files. It also attaches `SHA256SUMS` and `latest.json` to the GitHub release.
+Tags matching `v*` run [the release workflow](.github/workflows/release.yml). It builds unsigned `.dmg`, `.msi` or `.exe`, `.AppImage`, and `.deb` files. It also attaches `SHA256SUMS` and `latest.json` to the GitHub release; the integrity claim checks those files and one published checksum.
 
 ## Archive License
 
@@ -54,7 +54,7 @@ The optional Archive License costs $19 once. It saves up to 25 audit receipts on
 
 ## Deploy
 
-Deploy `dist/site/` as a static site. `staticwebapp.config.json` supplies SPA fallback, caching, and security headers. Do not deploy or change DNS from this repository.
+Deploy `dist/site/` as a static site. `staticwebapp.config.json` keeps direct route links working, serves unknown paths as real 404 responses, and sets cache and security headers. Do not deploy or change DNS from this repository.
 
 ## Project notes
 

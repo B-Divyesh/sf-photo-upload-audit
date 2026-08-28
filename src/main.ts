@@ -18,6 +18,10 @@ const state: {
   receiptNote: string;
 } = { source: [], destination: [], busy: false, error: '', filter: 'all', demo: false, paid: false, receiptNote: '' };
 
+type DirectoryEntry = DirectoryHandle | { kind: 'file'; getFile(): Promise<File> };
+type DirectoryHandle = { name: string; kind: 'directory'; entries(): AsyncIterableIterator<[string, DirectoryEntry]>; isSameEntry(other: DirectoryHandle): Promise<boolean> };
+const directoryHandles: Partial<Record<'source' | 'destination', DirectoryHandle>> = {};
+
 const routeMeta: Record<string, { title: string; description: string }> = {
   '/': { title: 'Photo Upload Audit — Verify every backup file', description: 'Compare a camera export with any backup folder. Find missing, changed, duplicate, and unpaired Live Photo files.' },
   '/demo': { title: 'Demo — Photo Upload Audit', description: 'Try a complete photo backup audit with sample files.' },
@@ -31,6 +35,7 @@ const routeMeta: Record<string, { title: string; description: string }> = {
 const icon = `<svg aria-hidden="true" viewBox="0 0 32 32"><path d="M6 4h16l4 4v18H6z"/><path d="m11 16 3 3 7-8"/><path d="M22 4v5h4"/></svg>`;
 
 function currentPath(): string {
+  if (new URLSearchParams(location.search).get('demo') === '1') return '/demo';
   const path = location.pathname.replace(/\/+$/, '') || '/';
   return routeMeta[path] ? path : '/404';
 }
@@ -40,6 +45,7 @@ function escapeHtml(value: string): string {
 }
 
 async function nav(path: string): Promise<void> {
+  if (state.demo && path !== '/demo') resetDemoState();
   history.pushState({}, '', path);
   if (path === '/demo') state.result = undefined;
   await syncLicense(path);
@@ -49,7 +55,7 @@ async function nav(path: string): Promise<void> {
 function shell(content: string, path: string): string {
   return `
     <a class="skip-link" href="#main">Skip to main content</a>
-    ${state.demo ? `<aside class="demo-bar" aria-label="Demo mode"><span><strong>Demo</strong> — sample data, nothing is saved</span><span class="demo-actions"><button class="text-button" data-action="reset-demo">Reset demo</button><a href="/audit" data-nav>Start for real</a></span></aside>` : ''}
+    ${state.demo ? `<aside class="demo-bar" aria-label="Demo mode"><span><strong>Demo</strong> — sample data, nothing is saved</span><span class="demo-actions"><button class="text-button" data-action="reset-demo">Reset demo</button><a href="/audit" data-action="start-real">Start for real</a></span></aside>` : ''}
     <header class="site-header">
       <a class="wordmark" href="/" data-nav aria-label="Photo Upload Audit home">${icon}<span>Photo Upload Audit</span></a>
       <nav aria-label="Main navigation">
@@ -63,7 +69,7 @@ function shell(content: string, path: string): string {
     <footer>
       <div><a class="wordmark footer-mark" href="/" data-nav>${icon}<span>Photo Upload Audit</span></a><p>Verify every file before you clear your phone.</p></div>
       <nav aria-label="Footer navigation"><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a><a href="https://sociobot.in" rel="external">Built by Param Factory <span class="sr-only">(external site)</span></a></nav>
-      <p class="build">v0.1.0 · build 2026.08</p>
+      <p class="build">v${__APP_VERSION__} · local-first desktop app</p>
     </footer>
     <div class="route-announcer sr-only" aria-live="polite"></div>`;
 }
@@ -94,7 +100,7 @@ function home(): string {
       </div>
     </section>
     <section class="preview section-grid" aria-labelledby="preview-title">
-      <div class="section-intro"><p class="eyebrow">The receipt</p><h2 id="preview-title">One answer for every file</h2><p>Hashes prove file contents. Names only help explain a mismatch.</p><a class="arrow-link" href="/audit" data-nav>Audit your folders <span aria-hidden="true">→</span></a></div>
+      <div class="section-intro"><p class="eyebrow">The receipt</p><h2 id="preview-title">See which files match or need attention</h2><p>The app compares each file’s contents, even when its name changed.</p><a class="arrow-link" href="/audit" data-nav>Audit your folders <span aria-hidden="true">→</span></a></div>
       ${miniReceipt()}
     </section>
     <section class="how section-grid" aria-labelledby="how-title">
@@ -106,16 +112,16 @@ function home(): string {
       </ol>
     </section>
     <section class="walkthrough" aria-labelledby="walkthrough-title">
-      <div class="section-intro"><p class="eyebrow">Inside the app</p><h2 id="walkthrough-title">From folders to proof</h2></div>
+      <div class="section-intro"><p class="eyebrow">Inside the app</p><h2 id="walkthrough-title">Compare two folders in three steps</h2></div>
       <div class="frames">
-        ${walkFrame('1', 'Pick both folders', 'Source always stays on the left.', '<span class="folder-glyph">EXPORT</span><span class="flow-line"></span><span class="folder-glyph destination">BACKUP</span>')}
+        ${walkFrame('1', 'Pick both folders', 'Source is always first.', '<span class="folder-glyph">EXPORT</span><span class="flow-line"></span><span class="folder-glyph destination">BACKUP</span>')}
         ${walkFrame('2', 'Watch each hash', 'The current file and count stay visible.', '<span class="frame-count">4,812 / 9,204</span><span class="frame-bar"><i></i></span>')}
-        ${walkFrame('3', 'Resolve exceptions', 'Each row says what happened.', '<span class="frame-row missing">Missing · IMG_1844.HEIC</span><span class="frame-row changed">Changed · IMG_1843.HEIC</span>')}
+        ${walkFrame('3', 'Review files that need attention', 'Each row says what happened.', '<span class="frame-row missing">Missing · IMG_1844.HEIC</span><span class="frame-row changed">Changed · IMG_1843.HEIC</span>')}
       </div>
     </section>
     ${downloadsSection()}
     <section class="boundaries section-grid" aria-labelledby="privacy-title">
-      <div class="section-intro"><p class="eyebrow">Clear boundaries</p><h2 id="privacy-title">Your archive is not our library</h2></div>
+      <div class="section-intro"><p class="eyebrow">Clear boundaries</p><h2 id="privacy-title">Your photo data stays on your device</h2></div>
       <div class="boundary-copy"><p>The app reads the folders you choose. It never moves, edits, or deletes media.</p><p>No photo index or filename is sent to us. License checks send only the license token.</p><p>It does not upload photos, recognise faces, or replace your backup tool.</p></div>
     </section>
     ${paidSection()}`;
@@ -140,11 +146,11 @@ function walkFrame(number: string, title: string, text: string, visual: string):
 }
 
 function downloadsSection(): string {
-  return `<section class="downloads section-grid" aria-labelledby="download-title"><div class="section-intro"><p class="eyebrow">Desktop app</p><h2 id="download-title">Install it where your archive lives</h2><p>The app is unsigned in v0.1. Your system may ask you to confirm the first launch.</p></div><div class="download-panel" data-downloads><div class="download-status"><span class="spinner" aria-hidden="true"></span><p>Checking desktop releases…</p></div><a class="arrow-link" href="https://github.com/B-Divyesh/sf-photo-upload-audit/releases" rel="external">View all releases <span class="sr-only">(external site)</span></a></div></section>`;
+  return `<section class="downloads section-grid" aria-labelledby="download-title"><div class="section-intro"><p class="eyebrow">Desktop app</p><h2 id="download-title">Install it where your archive lives</h2><p>Desktop installers for v${__APP_VERSION__} are unsigned.</p></div><div class="download-panel" data-downloads><div class="download-status"><span class="spinner" aria-hidden="true"></span><p>Checking desktop releases…</p></div><a class="arrow-link" href="https://github.com/B-Divyesh/sf-photo-upload-audit/releases" rel="external">View all releases <span class="sr-only">(external site)</span></a></div></section>`;
 }
 
 function paidSection(): string {
-  return `<section class="paid section-grid" aria-labelledby="paid-title"><div class="section-intro"><p class="eyebrow">Archive License</p><h2 id="paid-title">Keep a record of every audit</h2><p>$19 one-time. Save up to 25 local audit receipts and print verification certificates. Scanning and CSV export stay free.</p></div><div class="license-panel"><p class="license-price"><strong>$19</strong><span>one-time purchase</span></p><a class="button primary" href="${checkoutUrl}">Buy Archive License</a><a class="text-link" href="/history" data-nav>Review saved receipts</a><button class="text-button" data-action="show-license">Have a license? Paste it</button><form class="license-form" data-license-form hidden><label for="license-token">License token</label><div><input id="license-token" name="license" autocomplete="off" required /><button class="button secondary" type="submit">Verify license</button></div><p class="form-note" data-license-note aria-live="polite"></p></form><p class="fine-print">Sociobot/Dodo is the merchant of record. Refunds are handled there.</p></div></section>`;
+  return `<section class="paid section-grid" aria-labelledby="paid-title"><div class="section-intro"><p class="eyebrow">Archive License</p><h2 id="paid-title">Keep up to 25 audit receipts</h2><p>$19 one-time. Save up to 25 local audit receipts and print verification certificates. Scanning and CSV export stay free.</p></div><div class="license-panel"><p class="license-price"><strong>$19</strong><span>one-time purchase</span></p><a class="button primary" href="${checkoutUrl}">Buy Archive License</a><a class="text-link" href="/history" data-nav>Review saved receipts</a><button class="text-button" data-action="show-license">Enter license token</button><form class="license-form" data-license-form hidden><label for="license-token">License token</label><div><input id="license-token" name="license" autocomplete="off" required /><button class="button secondary" type="submit">Verify license</button></div><p class="form-note" data-license-note aria-live="polite"></p></form><p class="fine-print">Sociobot/Dodo is the merchant of record.</p></div></section>`;
 }
 
 function auditPage(): string {
@@ -172,7 +178,8 @@ function pickerView(): string {
 function folderPicker(kind: 'source' | 'destination', label: string, files: MediaFile[]): string {
   const description = files.length ? `${files.length.toLocaleString()} media files ready` : 'No folder chosen';
   const controlLabel = `Choose ${kind === 'source' ? 'export' : 'backup'} folder`;
-  return `<div class="folder-picker ${files.length ? 'has-files' : ''}"><span class="folder-number">${label}</span><strong>${kind === 'source' ? 'What left the phone' : 'Where it should be'}</strong><p id="${kind}-folder-help">${description}</p><label class="folder-input-label" for="${kind}-folder">${controlLabel}</label><input class="folder-input" id="${kind}-folder" type="file" webkitdirectory multiple data-folder="${kind}" aria-describedby="${kind}-folder-help" /></div>`;
+  const nativePicker = 'showDirectoryPicker' in window ? `<button class="button secondary" data-action="choose-folder" data-folder-kind="${kind}">${controlLabel}</button><p class="picker-note">Checks folder identity when your browser allows it.</p>` : '';
+  return `<div class="folder-picker ${files.length ? 'has-files' : ''}"><span class="folder-number">${label}</span><strong>${kind === 'source' ? 'What left the phone' : 'Where it should be'}</strong><p id="${kind}-folder-help">${description}</p>${nativePicker}<label class="folder-input-label" for="${kind}-folder">Or choose a folder from your device</label><input class="folder-input" id="${kind}-folder" type="file" webkitdirectory multiple data-folder="${kind}" aria-describedby="${kind}-folder-help" /></div>`;
 }
 
 function resultView(): string {
@@ -191,7 +198,7 @@ function resultView(): string {
 
 function legalPage(kind: 'privacy' | 'terms'): string {
   if (kind === 'privacy') return `<article class="legal"><p class="eyebrow">Policy</p><h1>Privacy without a photo upload</h1><p class="updated">Effective 28 August 2026</p><h2>Files stay local</h2><p>Photo Upload Audit reads only the folders you choose. Media contents, names, hashes, and reports are not sent to us.</p><h2>Data stored on your device</h2><p>The web app stores its offline shell. A paid license can also store audit receipts in your browser. Demo data uses memory only and is discarded when you leave demo mode.</p><h2>License checks</h2><p>If you add a license, the app sends that token to the Sociobot billing API. It does not send photo data with the request.</p><h2>No analytics</h2><p>This version has no analytics, advertising, or tracking scripts.</p><h2>Your choices</h2><p>Clear this site's browser storage to remove a saved license and receipts. Removing the desktop app removes its local data.</p><h2>Contact</h2><p>Email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a> with a privacy question.</p></article>`;
-  return `<article class="legal"><p class="eyebrow">Terms</p><h1>Terms for using the audit</h1><p class="updated">Effective 28 August 2026</p><h2>What the app does</h2><p>The app compares selected files and reports what it finds. It never replaces a second backup or a restore test.</p><h2>Your responsibility</h2><p>Review the receipt before deleting any original. Keep another copy of important media.</p><h2>Archive License</h2><p>The Archive License costs $19 once. It adds saved receipts and printable certificates. Sociobot/Dodo is the merchant of record and handles refunds. A refund revokes the license.</p><h2>Warranty</h2><p>The software is provided as-is under the MIT License. We do not promise that storage hardware, operating systems, or unrelated backup tools will work.</p><h2>Acceptable use</h2><p>Do not use the billing service unlawfully or try to bypass license checks.</p><h2>Contact</h2><p>Email <a href="mailto:support@sociobot.in">support@sociobot.in</a> with a terms question.</p></article>`;
+  return `<article class="legal"><p class="eyebrow">Terms</p><h1>Terms for using the audit</h1><p class="updated">Effective 28 August 2026</p><h2>What the app does</h2><p>The app compares selected files and reports what it finds. It never replaces a second backup or a restore test.</p><h2>Your responsibility</h2><p>Review the receipt before deleting any original. Keep another copy of important media.</p><h2>Archive License</h2><p>The Archive License costs $19 once. It adds saved receipts and printable certificates. Sociobot/Dodo is the merchant of record. Email support for billing questions.</p><h2>Warranty</h2><p>The software is provided as-is under the MIT License. We do not promise that storage hardware, operating systems, or unrelated backup tools will work.</p><h2>Acceptable use</h2><p>Do not use the billing service unlawfully or try to bypass license checks.</p><h2>Contact</h2><p>Email <a href="mailto:support@sociobot.in">support@sociobot.in</a> with a terms question.</p></article>`;
 }
 
 function receiptHistory(): AuditResult[] {
@@ -238,10 +245,13 @@ function bindEvents(): void {
   }));
   document.querySelectorAll<HTMLInputElement>('[data-folder]').forEach((input) => input.addEventListener('change', () => {
     const kind = input.dataset.folder as 'source' | 'destination';
+    delete directoryHandles[kind];
     state[kind] = toMediaFiles(input.files ?? []);
     state.error = state[kind].length ? '' : 'That folder contains no supported photos or videos.';
     void render();
   }));
+  document.querySelectorAll<HTMLButtonElement>('[data-action="choose-folder"]').forEach((button) => button.addEventListener('click', () => void chooseDirectory(button.dataset.folderKind as 'source' | 'destination')));
+  document.querySelector('[data-action="start-real"]')?.addEventListener('click', (event) => { event.preventDefault(); resetDemoState(); void nav('/audit'); });
   document.querySelector('[data-action="scan"]')?.addEventListener('click', () => void runScan());
   document.querySelector('[data-action="new-audit"]')?.addEventListener('click', () => { state.result = undefined; state.source = []; state.destination = []; state.filter = 'all'; void render(); });
   document.querySelector('[data-action="reset-demo"]')?.addEventListener('click', async () => { state.filter = 'all'; state.result = await makeSampleAudit(); await render(); });
@@ -279,8 +289,8 @@ function bindEvents(): void {
 
 async function runScan(): Promise<void> {
   if (!state.source.length || !state.destination.length) { state.error = 'A source folder or backup folder is missing.'; await render(); return; }
-  if (rootLabel(state.source).toLocaleLowerCase() === rootLabel(state.destination).toLocaleLowerCase()) {
-    state.error = 'Choose two different folders. The source and backup folder have the same root name.';
+  if (directoryHandles.source && directoryHandles.destination && await directoryHandles.source.isSameEntry(directoryHandles.destination)) {
+    state.error = 'Choose two different folders. The source and backup folder are the same folder.';
     await render();
     return;
   }
@@ -307,11 +317,53 @@ function rootLabel(files: MediaFile[]): string {
   return first.includes('/') ? first.split('/')[0] : 'Selected folder';
 }
 
+function resetDemoState(): void {
+  state.result = undefined;
+  state.source = [];
+  state.destination = [];
+  state.filter = 'all';
+  state.progress = undefined;
+  state.error = '';
+  state.receiptNote = '';
+  delete directoryHandles.source;
+  delete directoryHandles.destination;
+}
+
+async function chooseDirectory(kind: 'source' | 'destination'): Promise<void> {
+  const picker = (window as Window & { showDirectoryPicker?: () => Promise<DirectoryHandle> }).showDirectoryPicker;
+  if (!picker) return;
+  try {
+    const handle = await picker();
+    directoryHandles[kind] = handle;
+    state[kind] = await filesFromDirectory(handle);
+    state.error = state[kind].length ? '' : 'That folder contains no supported photos or videos.';
+    await render();
+  } catch (error) {
+    if ((error as DOMException).name !== 'AbortError') { state.error = 'That folder could not be read. Choose it again.'; await render(); }
+  }
+}
+
+async function filesFromDirectory(handle: DirectoryHandle, prefix = handle.name): Promise<MediaFile[]> {
+  const files: MediaFile[] = [];
+  for await (const [name, entry] of handle.entries()) {
+    if (entry.kind === 'directory') files.push(...await filesFromDirectory(entry, `${prefix}/${name}`));
+    else {
+      const file = await entry.getFile();
+      if (!/\.(jpg|jpeg|heic|heif|png|gif|webp|dng|raw|mov|mp4|m4v|avi|3gp|mts|webm)$/i.test(file.name)) continue;
+      const relativePath = `${prefix}/${name}`;
+      files.push({ id: `${relativePath}:${file.size}:${file.lastModified}:${files.length}`, name: file.name, path: relativePath, relativePath, size: file.size, modified: file.lastModified, type: file.type, file });
+    }
+  }
+  return files;
+}
+
 function updateProgress(progress: ScanProgress): void {
   const element = document.querySelector<HTMLProgressElement>('progress');
   if (element) { element.max = Math.max(progress.total, 1); element.value = progress.current; }
   const panel = document.querySelector('.scan-progress');
   if (panel) panel.querySelector('strong')!.textContent = `${progress.current} / ${progress.total}`;
+  if (panel) panel.querySelector('p')!.textContent = progress.fileName || 'Building the receipt…';
+  if (panel) panel.querySelector('span')!.textContent = progress.stage === 'compare' ? 'Comparing files' : `Hashing ${progress.stage}`;
 }
 
 function download(content: string, type: string, name: string): void {

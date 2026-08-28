@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 
 const fixture = (name: string) => path.resolve('tests/fixtures', name);
 
@@ -38,13 +39,64 @@ test('history navigation restores routes and heading focus', async ({ page }) =>
   await expect(page.locator('h1')).toBeFocused();
 });
 
-test('@claim:same-folder-safe rejects a source and backup with the same selected root', async ({ page }) => {
+test('@claim:same-folder-safe rejects the same directory handle and accepts different same-named handles', async ({ page }) => {
+  await page.addInitScript(() => {
+    const file = (name: string, body: string) => new File([body], name, { type: 'image/jpeg', lastModified: 1 });
+    const one = { name: 'DCIM', kind: 'directory', isSameEntry: async (other: unknown) => other === one, entries: async function* () { yield ['one.jpg', { kind: 'file', getFile: async () => file('one.jpg', 'one') }]; } };
+    const two = { name: 'DCIM', kind: 'directory', isSameEntry: async (other: unknown) => other === two, entries: async function* () { yield ['two.jpg', { kind: 'file', getFile: async () => file('two.jpg', 'two') }]; } };
+    let calls = 0;
+    Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => (++calls <= 2 ? one : two) });
+  });
   await page.goto('/audit');
-  await page.locator('#source-folder').setInputFiles(fixture('same-root'));
-  await page.locator('#destination-folder').setInputFiles(fixture('same-root'));
+  await page.getByRole('button', { name: 'Choose export folder' }).click();
+  await page.getByRole('button', { name: 'Choose backup folder' }).click();
   await page.getByRole('button', { name: 'Compare every file' }).click();
   await expect(page.getByRole('alert')).toContainText('Choose two different folders');
   await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Choose backup folder' }).click();
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await expect(page.getByText('1 source files need attention')).toBeVisible();
+});
+
+test('@claim:scan-progress keeps the current file and count visible during hashing', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = File.prototype.stream;
+    File.prototype.stream = function () {
+      const stream = original.call(this);
+      const reader = stream.getReader();
+      return new ReadableStream({ async pull(controller) { await new Promise((resolve) => setTimeout(resolve, 60)); const next = await reader.read(); if (next.done) controller.close(); else controller.enqueue(next.value); } });
+    };
+  });
+  await page.goto('/audit');
+  await page.locator('#source-folder').setInputFiles(fixture('hash-source'));
+  await page.locator('#destination-folder').setInputFiles(fixture('hash-destination'));
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  const progress = page.locator('.scan-progress');
+  await expect(progress).toBeVisible();
+  await expect(progress).toContainText(/1 \/ 2/);
+  await expect(progress.locator('p')).not.toHaveText('Building the receipt…');
+});
+
+test('@claim:source-first keeps source before backup on desktop and mobile', async ({ page }) => {
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/audit');
+    const order = await page.locator('.folder-picker').evaluateAll((pickers) => pickers.map((picker) => picker.textContent));
+    expect(order[0]).toContain('Camera export');
+    expect(order[1]).toContain('Backup folder');
+  }
+});
+
+test('pre-rendered routes publish route-specific metadata and a real 404 configuration', async () => {
+  const expectations: Record<string, string> = { 'demo.html': 'Demo — Photo Upload Audit', 'audit.html': 'Audit folders — Photo Upload Audit', 'privacy.html': 'Privacy — Photo Upload Audit', 'terms.html': 'Terms — Photo Upload Audit', '404.html': 'Page not found — Photo Upload Audit' };
+  for (const [file, title] of Object.entries(expectations)) {
+    const html = await readFile(`dist/site/${file}`, 'utf8');
+    expect(html).toContain(`<title>${title}</title>`);
+    expect(html).toContain(`property="og:title" content="${title}"`);
+    expect(html).toContain(`name="twitter:title" content="${title}"`);
+  }
+  const config = JSON.parse(await readFile('dist/site/staticwebapp.config.json', 'utf8')) as { responseOverrides: { '404': { rewrite: string; statusCode: number } } };
+  expect(config.responseOverrides['404']).toEqual({ rewrite: '/404.html', statusCode: 404 });
 });
 
 test('@claim:one-to-one-match allocates one backup file to at most one identical source file', async ({ page }) => {
