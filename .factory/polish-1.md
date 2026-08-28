@@ -30,4 +30,4 @@ Candidate repaired from `19d07cdba8dd0f520ca0465033854859875a4862` using every f
 - `npm ci`, then `npm test`: 36 passing tests, including all 23 exact `@claim:` tests, local browser routes, mobile/reflow, offline, privacy, and axe checks.
 - `npm run build:site`: passes and creates `dist/site/` plus per-route static HTML.
 - `@claim:release-integrity-files` validates the public release’s `SHA256SUMS` against its published `.deb`.
-- Live deployment verification is recorded in the handoff after push.
+- Cold live verification after deployment: `/`, `/demo`, `/audit`, `/history`, `/privacy`, and `/terms` returned 200 with one h1; `?demo=1` showed the isolated banner and cleared before `/audit`; `/does-not-exist` returned 404 with the designed heading; normal routes had no console errors. Screenshot: `test-results/polish-1-live-demo-390.png`.

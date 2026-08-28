@@ -1,34 +1,34 @@
-# Photo Upload Audit — review 1 handoff
+# Photo Upload Audit — polish 1 handoff
 
-## Outcome
+## Delivered
 
-Adversarial first-read review 1 is complete. Verdict: **FAIL** with 20 findings, four blocking.
+Repair commit: `7edc625c220bedd55141ab8ca08d9cc5900268b2` (`fix: complete audit polish and isolated demo`). It was pushed to `origin/main`; tag `v0.1.2` was pushed to start the desktop release workflow.
 
-The full report is [`.factory/review-1.md`](review-1.md). Product code was not modified.
+This round resolves all 20 findings in `.factory/review-1.md`. The full finding-by-finding mapping is in `.factory/polish-1.md`.
 
-## Blocking findings
+## Verification
 
-1. **Start for real** removes the demo banner but carries the sample receipt into `/audit`; a cached paid license can save it into real receipt history.
-2. The same-folder guard compares only the selected root name, so two different folders named `DCIM` are rejected.
-3. Unknown live URLs still render the designed not-found screen with HTTP 200, reproducing the prior handoff gap.
-4. Release identity remains inconsistent: the live footer says v0.1.0, the package/release say v0.1.1, and the service-worker cache says v0.1.2.
+- Clean dependency install: `npm ci` completed with 0 vulnerabilities.
+- Full suite: `npm test` — **36 passed**. It covers all 23 declared claims, real file scans, offline demo reload, network privacy, metadata, keyboard/focus, 390 px and 200% reflow, and axe serious/critical checks.
+- Every exact command in `.factory/claims.json` was run after the clean install; each passed. The release-integrity claim used the public GitHub release API and verified the published `.deb` SHA-256 against `SHA256SUMS`.
+- `npm run build:site`, `npm run lint`, `cargo fmt --manifest-path src-tauri/Cargo.toml -- --check`, and `git diff --check` pass. Build output is `dist/site/`; initial JS is 36.26 kB raw / 12.95 kB gzip and CSS is 19.99 kB raw / 5.32 kB gzip.
+- Static deployment: `/opt/fleet/lib/deploy-static.sh photo-upload-audit dist/site` completed successfully.
+- Cold live verification at `https://photo-upload-audit.sociobot.in`: `/`, `/demo`, `/audit`, `/history`, `/privacy`, and `/terms` return 200 and render one h1; `/does-not-exist` returns HTTP 404 and the styled archive heading. `?demo=1` shows the persistent sample banner, and **Start for real** opens empty folder selection without sample filenames. Normal routes logged no console errors. Mobile evidence: `test-results/polish-1-live-demo-390.png`.
 
-## Verification performed
+## Run locally
 
-- Cold live visits at 390 × 844 and 1440 × 900.
-- Demo entry, reset, storage isolation, offline reload, **Start for real**, and paid-history contamination checks.
-- Every exact command in `.factory/claims.json`: 17/17 passed.
-- `npm test`: 29/29 passed; production build emitted `dist/site/`.
-- Live axe integration on all routes: no serious or critical violations.
-- Deep-link, back/focus, metadata, console, 404 status, and complete discovered-link crawl.
-- Prior handoff and both verification reports rechecked against live behavior and source.
-- Landing and README sentence-by-sentence word-count audit.
+```sh
+npm ci
+npm test
+npm run build:site
+```
 
-## Reproduce the two newly exposed core failures
+Deploy `dist/site/` with the work-order static deployment helper.
 
-1. Open `/demo`, select **Start for real**, and inspect `/audit`: the sample receipt remains. With a cached valid license, select **Save receipt** and inspect `localStorage['audit:receipts']`.
-2. Select two different local directories that are both named `DCIM`; the app reports that the source and backup have the same root name and refuses to scan.
+## Release status
 
-## Working tree and next steps
+The pushed `v0.1.2` GitHub Actions desktop release workflow is building macOS arm64/x64, Windows, and Linux artifacts. It must complete before users can download installers built from this repair; its URL is `https://github.com/B-Divyesh/sf-photo-upload-audit/actions/runs/33181103741`.
 
-Only `.factory/review-1.md` and this handoff are intended review changes. The next implementation should address all report findings, add the missing adversarial tests, deploy the repaired site, and then run the entire review from scratch.
+## Needs operator action
+
+Installers are intentionally unsigned. macOS notarization needs `APPLE_CERTIFICATE`; Windows signing needs `WINDOWS_CERT_PFX`. No signing secrets are stored in this repository.
