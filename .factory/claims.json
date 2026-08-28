@@ -7,6 +7,13 @@
     "sandbox": "fresh browser context; open /demo and inspect the seeded receipt"
   },
   {
+    "id": "demo-reset",
+    "claim": "Reset demo restores the complete sample audit",
+    "where": "demo banner, README",
+    "test": "npm test -- --grep @claim:demo-reset",
+    "sandbox": "fresh browser context; open /demo, filter to Missing, reset, and inspect the All filter and all eight sample rows"
+  },
+  {
     "id": "demo-to-real",
     "claim": "Starting for real discards sample data before folder selection",
     "where": "demo banner, README",

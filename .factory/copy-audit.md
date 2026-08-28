@@ -9,6 +9,7 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space. | 16 | — |
 | Try it with sample data | 5 | — |
 | See a finished audit in one click. | 7 | — |
+| Reset demo | 2 | — |
 | Files stay on this device | 5 | — |
 | Works without an account | 4 | — |
 | Core audit and CSV are free | 6 | — |
@@ -62,3 +63,5 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 ## Repair note
 
 Updated after review 1. The landing has no sentence over 22 words and no banned marketing word. Source is consistently the first folder rather than a left-only promise, so the wording remains true when controls stack on a phone.
+
+Updated after review 3. The persistent demo action is included above and maps to the `demo-reset` claim. Compact all-caps scan labels (for example `SCAN 07/14`) are decorative metadata; every explanatory sentence and control label uses at least 16 px on a phone.

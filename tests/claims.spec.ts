@@ -13,6 +13,16 @@ test('@claim:demo-sandbox opens a finished sample audit', async ({ page }) => {
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
 });
 
+test('@claim:demo-reset restores the full sample receipt and All filter', async ({ page }) => {
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'missing 1' }).click();
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.getByRole('button', { name: 'All 8' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('tbody tr')).toHaveCount(8);
+  await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
+});
+
 test('@claim:demo-to-real discards the receipt before real folder selection', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sb_license:photo-upload-audit', 'cached-test-token');

@@ -30,6 +30,44 @@ test('mobile demo fits a 390px viewport and remains operable', async ({ page }) 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
+test('every visible phone interaction has a 44px target', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const tooSmall: Array<{ route: string; name: string; width: number; height: number }> = [];
+  for (const route of ['/', '/demo', '/audit', '/history', '/privacy', '/terms', '/does-not-exist']) {
+    await page.goto(route);
+    tooSmall.push(...await page.locator('a[href], button, input:not([type="hidden"]), select, textarea, [role="button"]').evaluateAll((elements, currentRoute) => elements.flatMap((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      const hidden = style.display === 'none' || style.visibility === 'hidden' || box.width === 0 || box.height === 0;
+      if (hidden || box.width >= 44 && box.height >= 44) return [];
+      return [{ route: currentRoute, name: (element.getAttribute('aria-label') || element.textContent || element.getAttribute('id') || element.tagName).trim(), width: box.width, height: box.height }];
+    }), route));
+  }
+  expect(tooSmall).toEqual([]);
+});
+
+test('meaningful phone copy is at least 16px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const selectors = [
+    '.demo-bar', '.hero-action span', '.plain-facts li', '.section-intro > p:not(.eyebrow)', '.receipt-row > span:last-child',
+    '.steps p', '.frames figcaption p', '.download-status p', '.download-wait span', '.detected', '.download-note',
+    '.boundary-copy p', '.fine-print', 'footer p', '.build', '.workbench-heading > p:last-child', '.folder-picker p',
+    '.scan-action span', '.error-message span', '.scan-progress p', '.receipt-note', '.summary-strip dt', '.result-context',
+    '.path', 'td', '.empty-filter p', '.receipt-history span', '.legal p:not(.eyebrow)', '.form-note',
+  ].join(', ');
+  const tooSmall: Array<{ route: string; text: string; fontSize: number }> = [];
+  for (const route of ['/', '/demo', '/audit', '/history', '/privacy', '/terms', '/does-not-exist']) {
+    await page.goto(route);
+    tooSmall.push(...await page.locator(selectors).evaluateAll((elements, currentRoute) => elements.flatMap((element) => {
+      const style = getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden' || element.getBoundingClientRect().height === 0) return [];
+      const fontSize = Number.parseFloat(style.fontSize);
+      return fontSize >= 16 ? [] : [{ route: currentRoute, text: (element.textContent || element.className).trim().slice(0, 80), fontSize }];
+    }), route));
+  }
+  expect(tooSmall).toEqual([]);
+});
+
 test('history navigation restores routes and heading focus', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Demo', exact: true }).click();
