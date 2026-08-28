@@ -48,8 +48,12 @@ async function nav(path: string): Promise<void> {
   if (state.demo && path !== '/demo') resetDemoState();
   history.pushState({}, '', path);
   if (path === '/demo') state.result = undefined;
+  // Render the new route before an optional license check. This prevents the
+  // just-discarded demo receipt from lingering on screen while that network
+  // request settles.
+  await render(true);
   await syncLicense(path);
-  void render(true);
+  await render();
 }
 
 function shell(content: string, path: string): string {
@@ -433,7 +437,13 @@ async function syncLicense(path: string): Promise<void> {
   state.paid = (await licenseState()).active;
 }
 
-window.addEventListener('popstate', () => void syncLicense(currentPath()).then(() => render(true)));
+window.addEventListener('popstate', () => {
+  const path = currentPath();
+  // Back/forward can leave the demo without going through nav(). Keep the
+  // sandbox boundary intact in that path as well.
+  if (state.demo && path !== '/demo') resetDemoState();
+  void render(true).then(() => syncLicense(path)).then(() => render());
+});
 
 async function start(): Promise<void> {
   await syncLicense(currentPath());

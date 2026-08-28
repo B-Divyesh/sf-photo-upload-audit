@@ -33,9 +33,18 @@ test('@claim:demo-to-real discards the receipt before real folder selection', as
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Start for real' }).click();
   await expect(page).toHaveURL(/\/audit$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Compare two photo folders' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Compare every file' })).toBeDisabled();
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save receipt' })).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('audit:receipts'))).toBe('[]');
+  await page.goBack();
+  await expect(page).toHaveURL(/\?demo=1$/);
+  await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
+  await page.goForward();
+  await expect(page).toHaveURL(/\/audit$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Compare two photo folders' })).toBeVisible();
+  await expect(page.getByText('IMG_1844.MOV', { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('audit:receipts'))).toBe('[]');
 });
 
