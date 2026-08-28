@@ -53,7 +53,6 @@ async function nav(path: string): Promise<void> {
   // request settles.
   await render(true);
   await syncLicense(path);
-  await render();
 }
 
 function shell(content: string, path: string): string {
@@ -442,7 +441,7 @@ window.addEventListener('popstate', () => {
   // Back/forward can leave the demo without going through nav(). Keep the
   // sandbox boundary intact in that path as well.
   if (state.demo && path !== '/demo') resetDemoState();
-  void render(true).then(() => syncLicense(path)).then(() => render());
+  void render(true).then(() => syncLicense(path));
 });
 
 async function start(): Promise<void> {
