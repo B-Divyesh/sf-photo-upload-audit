@@ -5,12 +5,29 @@ import { readFile } from 'node:fs/promises';
 
 const fixture = (name: string) => path.resolve('tests/fixtures', name);
 
-test('@claim:demo-sandbox opens a finished sample audit', async ({ page }) => {
-  await page.goto('/demo');
+test('@claim:demo-sandbox opens a finished sample audit without writing real browser storage', async ({ page }) => {
+  await page.addInitScript(() => {
+    const writes: Array<{ area: 'local' | 'session'; key: string; url: string }> = [];
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      writes.push({ area: this === localStorage ? 'local' : 'session', key, url: location.href });
+      return setItem.call(this, key, value);
+    };
+    (window as unknown as Window & { demoStorageWrites: typeof writes }).demoStorageWrites = writes;
+  });
+  await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await route.fulfill({ json: { tag_name: 'v0.1.2', html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.2', assets: [] } });
+  });
+  await page.goto('/?release-preview=1');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Find every gap in a photo backup' })).toBeVisible();
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await expect(page.getByText('2 source files need attention')).toBeVisible();
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
+  await page.waitForTimeout(450);
+  expect(await page.evaluate(() => (window as unknown as Window & { demoStorageWrites: Array<{ key: string }> }).demoStorageWrites)).toEqual([]);
+  expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
 });
 
 test('@claim:demo-reset restores the full sample receipt and All filter', async ({ page }) => {
@@ -62,17 +79,58 @@ test('@claim:local-only sends no file data off origin', async ({ page }) => {
   expect(offOrigin).toEqual([]);
 });
 
-test('@claim:hash-compare matches content when names differ', async ({ page }) => {
+test('@claim:hash-compare matches content when names and timestamps differ', async ({ page }) => {
   await page.goto('/audit');
-  await page.locator('#source-folder').setInputFiles(fixture('hash-source'));
-  await page.locator('#destination-folder').setInputFiles(fixture('hash-destination'));
+  const selectFiles = async (selector: string, files: Array<{ name: string; body: string; type: string; modified: number }>) => {
+    await page.locator(selector).evaluate((input, selected) => {
+      const transfer = new DataTransfer();
+      for (const file of selected) transfer.items.add(new File([file.body], file.name, { type: file.type, lastModified: file.modified }));
+      const folderInput = input as HTMLInputElement;
+      folderInput.files = transfer.files;
+      folderInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }, files);
+  };
+  await selectFiles('#source-folder', [
+    { name: 'phone-original.jpg', body: 'same bytes', type: 'image/jpeg', modified: 1_700_000_000_000 },
+  ]);
+  await selectFiles('#destination-folder', [
+    { name: 'renamed-backup.jpg', body: 'same bytes', type: 'image/jpeg', modified: 1_800_000_000_000 },
+  ]);
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByText('1 source files need attention')).toBeVisible();
   await expect(page.getByRole('cell', { name: 'SHA-256 match' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: /Same name, different SHA-256/ })).toBeVisible();
+  await expect(page.getByText('Every source file is accounted for')).toBeVisible();
 });
 
-test('@claim:live-photo identifies paired and unpaired sidecars', async ({ page }) => {
+test('@claim:all-files-reported lists unsupported source files and prevents an all-clear', async ({ page }) => {
+  await page.goto('/audit');
+  const selectFiles = async (selector: string, files: Array<{ name: string; body: string; type: string }>) => {
+    await page.locator(selector).evaluate((input, selected) => {
+      const transfer = new DataTransfer();
+      for (const file of selected) transfer.items.add(new File([file.body], file.name, { type: file.type, lastModified: 1_700_000_000_000 }));
+      const folderInput = input as HTMLInputElement;
+      folderInput.files = transfer.files;
+      folderInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }, files);
+  };
+  await selectFiles('#source-folder', [
+    { name: 'IMG_0001.jpg', body: 'matched-jpg', type: 'image/jpeg' },
+    { name: 'IMG_0002.tif', body: 'matched-tiff', type: 'image/tiff' },
+    { name: 'IMG_0003.psd', body: 'unsupported-photo', type: 'image/vnd.adobe.photoshop' },
+  ]);
+  await selectFiles('#destination-folder', [
+    { name: 'backup-copy.jpg', body: 'matched-jpg', type: 'image/jpeg' },
+    { name: 'backup-copy.tif', body: 'matched-tiff', type: 'image/tiff' },
+  ]);
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await expect(page.getByText('1 source file needs attention')).toBeVisible();
+  await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
+  await expect(page.locator('.filename', { hasText: 'IMG_0003.psd' })).toBeVisible();
+  await expect(page.getByText('This file type is not checked by this version (.psd).')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'skipped 1' })).toBeVisible();
+  await expect(page.locator('.filename', { hasText: 'IMG_0002.tif' })).toBeVisible();
+});
+
+test('@claim:live-photo identifies complete and unpaired Live Photo files', async ({ page }) => {
   await page.goto('/demo');
   await expect(page.getByText('Live Photo: complete').first()).toBeVisible();
   await page.getByRole('button', { name: 'missing 1' }).click();

@@ -75,7 +75,7 @@ test('phone scan progress keeps its status and current filename at 16px', async 
     File.prototype.stream = function () {
       const stream = original.call(this);
       const reader = stream.getReader();
-      return new ReadableStream({ async pull(controller) { await new Promise((resolve) => setTimeout(resolve, 60)); const next = await reader.read(); if (next.done) controller.close(); else controller.enqueue(next.value); } });
+      return new ReadableStream({ async pull(controller) { await new Promise((resolve) => setTimeout(resolve, 150)); const next = await reader.read(); if (next.done) controller.close(); else controller.enqueue(next.value); } });
     };
   });
   await page.goto('/audit');
@@ -113,7 +113,7 @@ test('@claim:same-folder-safe rejects the same directory handle and accepts diff
   await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
   await page.getByRole('button', { name: 'Choose backup folder' }).click();
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByText('1 source files need attention')).toBeVisible();
+  await expect(page.getByText('1 source file needs attention')).toBeVisible();
 });
 
 test('@claim:scan-progress keeps the current file and count visible during hashing', async ({ page }) => {
@@ -122,7 +122,7 @@ test('@claim:scan-progress keeps the current file and count visible during hashi
     File.prototype.stream = function () {
       const stream = original.call(this);
       const reader = stream.getReader();
-      return new ReadableStream({ async pull(controller) { await new Promise((resolve) => setTimeout(resolve, 60)); const next = await reader.read(); if (next.done) controller.close(); else controller.enqueue(next.value); } });
+      return new ReadableStream({ async pull(controller) { await new Promise((resolve) => setTimeout(resolve, 150)); const next = await reader.read(); if (next.done) controller.close(); else controller.enqueue(next.value); } });
     };
   });
   await page.goto('/audit');
@@ -162,7 +162,7 @@ test('@claim:one-to-one-match allocates one backup file to at most one identical
   await page.locator('#source-folder').setInputFiles(fixture('duplicate-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('duplicate-destination'));
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByText('1 source files need attention')).toBeVisible();
+  await expect(page.getByText('1 source file needs attention')).toBeVisible();
   await page.getByRole('button', { name: 'missing 1' }).click();
   await expect(page.getByRole('cell', { name: 'No matching backup file' })).toBeVisible();
   await page.getByRole('button', { name: 'verified 1' }).click();
@@ -217,4 +217,16 @@ test('landing uses a plain-language progress heading', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('Follow the file check', { exact: true })).toBeVisible();
   await expect(page.getByText('Watch each hash', { exact: true })).toHaveCount(0);
+});
+
+test('terms advise safe deletion without claiming to replace a backup, and public copy stays plain', async ({ page }) => {
+  for (const route of ['/', '/demo', '/audit', '/history', '/privacy', '/terms', '/does-not-exist']) {
+    await page.goto(route);
+    await expect(page.getByText(/replaces a second backup|replace your backup tool/i)).toHaveCount(0);
+    await expect(page.getByText(/merchant of record|local-first|Live Photo sidecar/i)).toHaveCount(0);
+  }
+  await page.goto('/terms');
+  await expect(page.getByText('Keep a second backup and complete a restore test before deleting originals.')).toBeVisible();
+  await expect(page.getByText('Sociobot/Dodo processes your payment.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'support@sociobot.in' }).first()).toHaveAttribute('href', 'mailto:support@sociobot.in');
 });

@@ -1,15 +1,14 @@
 # Landing page copy audit
 
-Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navigation labels, button labels, table fragments, and headings are included where they form standalone phrases. No line exceeds 22 words. No line contains a banned word.
+Audited 2026-08-28 for polish round 5. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
 
 | Landing text | Words | Flag |
 |---|---:|---|
 | A receipt for your camera roll | 6 | — |
-| Prove every photo reached your backup | 6 | — |
+| Check every photo before clearing space | 6 | — |
 | For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space. | 16 | — |
 | Try it with sample data | 5 | — |
 | See a finished audit in one click. | 7 | — |
-| Reset demo | 2 | — |
 | Files stay on this device | 5 | — |
 | Works without an account | 4 | — |
 | Core audit and CSV are free | 6 | — |
@@ -32,21 +31,26 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | Each row says what happened. | 5 | — |
 | Install it where your archive lives | 6 | — |
 | Desktop installers for v0.1.2 are unsigned. | 6 | — |
-| Your photo data stays on your device | 8 | — |
+| Checking desktop releases… | 3 | — |
+| View all releases | 3 | — |
+| Your photo data stays on your device | 7 | — |
 | The app reads the folders you choose. | 7 | — |
 | It never moves, edits, or deletes media. | 7 | — |
 | No photo index or filename is sent to us. | 9 | — |
 | License checks send only the license token. | 7 | — |
 | It checks two folders. | 4 | — |
 | Keep your existing backup and complete a restore test. | 9 | — |
-| Keep up to 25 audit receipts | 7 | — |
+| Keep up to 25 audit receipts | 6 | — |
 | $19 one-time. | 2 | — |
 | Save up to 25 local audit receipts and print verification certificates. | 11 | — |
 | Scanning and CSV export stay free. | 6 | — |
 | Buy Archive License | 3 | — |
 | Review saved receipts | 3 | — |
 | Enter license token | 3 | — |
-| Sociobot/Dodo is the merchant of record. | 6 | — |
+| Sociobot/Dodo processes your payment. | 4 | — |
+| Email support@sociobot.in with billing questions. | 5 | — |
+| Check your backup before clearing your phone. | 7 | — |
+| v0.1.2 · desktop app · files stay on your device | 8 | — |
 
 ## Terminology
 
@@ -55,16 +59,16 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | Files copied from a phone | camera export |
 | Copy being checked | backup |
 | Comparison output | receipt |
-| File-content fingerprint | SHA-256 hash |
+| File-content fingerprint | SHA-256 fingerprint |
 | HEIC/JPG plus MOV unit | Live Photo pair |
+| A selected type the app cannot check | skipped file |
 | Optional paid entitlement | Archive License |
-| Saved paid audit output | receipt history |
+| Saved paid audit output | saved receipt |
 | Seeded isolated experience | demo |
 
-## Repair note
+## Round-5 checks
 
-Updated after review 1. The landing has no sentence over 22 words and no banned marketing word. Source is consistently the first folder rather than a left-only promise, so the wording remains true when controls stack on a phone.
-
-Updated after review 3. The persistent demo action is included above and maps to the `demo-reset` claim. Compact all-caps scan labels (for example `SCAN 07/14`) are decorative metadata; every explanatory sentence and control label uses at least 16 px on a phone.
-
-Updated after review 4. The boundary section now gives the user an honest backup and restore-test next step. It makes no untestable absence-of-feature promises.
+- The first screen says the job, audience, first action, outcome, and three plain facts in one viewport at 390 px and 1440 px.
+- “Every” is backed by a receipt that lists every selected source entry. Unsupported entries are shown as skipped and prevent the all-clear.
+- The site uses **Live Photo pair** everywhere; “sidecar,” “merchant of record,” and “local-first” are absent from public copy.
+- Terms gives deletion advice without claiming that the product replaces a backup or restore test.

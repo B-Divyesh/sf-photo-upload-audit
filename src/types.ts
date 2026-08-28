@@ -1,4 +1,4 @@
-export type AuditStatus = 'verified' | 'missing' | 'changed' | 'duplicate' | 'extra';
+export type AuditStatus = 'verified' | 'missing' | 'changed' | 'duplicate' | 'extra' | 'skipped';
 
 export interface MediaFile {
   id: string;
@@ -10,6 +10,12 @@ export interface MediaFile {
   type: string;
   hash?: string;
   file?: File;
+  /** False when the selected file type cannot be content-checked by this release. */
+  supported?: boolean;
+  /** A plain-language explanation shown in the receipt when a file was skipped. */
+  unsupportedReason?: string;
+  /** Set when a supported file could not be read for hashing. */
+  scanError?: string;
 }
 
 export interface AuditRow {

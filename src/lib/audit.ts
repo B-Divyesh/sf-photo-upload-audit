@@ -1,8 +1,9 @@
 import type { AuditResult, AuditRow, MediaFile, ScanProgress } from '../types';
 
 const MEDIA_EXTENSIONS = new Set([
-  'jpg', 'jpeg', 'heic', 'heif', 'png', 'gif', 'webp', 'dng', 'raw',
-  'mov', 'mp4', 'm4v', 'avi', '3gp', 'mts', 'webm',
+  'jpg', 'jpeg', 'heic', 'heif', 'png', 'gif', 'webp', 'tif', 'tiff', 'dng', 'raw',
+  'cr2', 'cr3', 'nef', 'arw', 'orf', 'rw2', 'raf',
+  'mov', 'mp4', 'm4v', 'avi', '3gp', 'mts', 'webm', 'mkv', 'mpg', 'mpeg', 'wmv',
 ]);
 
 export function isMedia(name: string): boolean {
@@ -17,22 +18,34 @@ export function isLivePart(file: MediaFile): boolean {
   return /\.(heic|heif|jpg|jpeg|mov)$/i.test(file.name);
 }
 
+export function toMediaFile(file: File, index: number, suppliedPath?: string): MediaFile {
+  const relativePath = suppliedPath || (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  const supported = isMedia(file.name);
+  return {
+    id: `${relativePath}:${file.size}:${file.lastModified}:${index}`,
+    name: file.name,
+    path: relativePath,
+    relativePath,
+    size: file.size,
+    modified: file.lastModified,
+    type: file.type,
+    file,
+    supported,
+    ...(supported ? {} : {
+      unsupportedReason: extension
+        ? `This file type is not checked by this version (.${extension}).`
+        : 'This file has no extension, so this version cannot check it.',
+    }),
+  };
+}
+
+/**
+ * Keep every selected entry. A receipt must surface a file the current
+ * version cannot check instead of silently excluding it from an all-clear.
+ */
 export function toMediaFiles(files: FileList | File[]): MediaFile[] {
-  return Array.from(files)
-    .filter((file) => isMedia(file.name))
-    .map((file, index) => {
-      const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
-      return {
-        id: `${relativePath}:${file.size}:${file.lastModified}:${index}`,
-        name: file.name,
-        path: relativePath,
-        relativePath,
-        size: file.size,
-        modified: file.lastModified,
-        type: file.type,
-        file,
-      };
-    });
+  return Array.from(files).map((file, index) => toMediaFile(file, index));
 }
 
 // Web Crypto only accepts a complete buffer for digest(), which is a poor fit for
@@ -124,7 +137,13 @@ export async function hashFile(file: File): Promise<string> {
 async function hashFiles(files: MediaFile[], stage: 'source' | 'destination', onProgress?: (progress: ScanProgress) => void): Promise<void> {
   for (let index = 0; index < files.length; index += 1) {
     const media = files[index];
-    if (!media.hash && media.file) media.hash = await hashFile(media.file);
+    if (!media.hash && media.file) {
+      try {
+        media.hash = await hashFile(media.file);
+      } catch {
+        media.scanError = 'This file could not be read for a content check.';
+      }
+    }
     onProgress?.({ stage, current: index + 1, total: files.length, fileName: media.name });
     if (media.file && index % 8 === 0) await new Promise<void>((resolve) => {
       if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
@@ -194,16 +213,20 @@ export async function compareLibraries(
   onProgress?: (progress: ScanProgress) => void,
 ): Promise<AuditResult> {
   const started = performance.now();
-  await hashFiles(source, 'source', onProgress);
-  await hashFiles(destination, 'destination', onProgress);
-  onProgress?.({ stage: 'compare', current: 0, total: source.length + destination.length, fileName: '' });
-  const destinationHashes = byHash(destination);
-  const destinationNames = byName(destination);
-  const sourceHashes = byHash(source);
-  const sourceLiveIndex = livePartners(source);
-  const destinationLiveIndex = livePartners(destination);
+  const sourceCandidates = source.filter((file) => file.supported !== false);
+  const destinationCandidates = destination.filter((file) => file.supported !== false);
+  await hashFiles(sourceCandidates, 'source', onProgress);
+  await hashFiles(destinationCandidates, 'destination', onProgress);
+  const sourceChecked = sourceCandidates.filter((file) => !file.scanError);
+  const destinationChecked = destinationCandidates.filter((file) => !file.scanError);
+  onProgress?.({ stage: 'compare', current: 0, total: sourceChecked.length + destinationChecked.length, fileName: '' });
+  const destinationHashes = byHash(destinationChecked);
+  const destinationNames = byName(destinationChecked);
+  const sourceHashes = byHash(sourceChecked);
+  const sourceLiveIndex = livePartners(sourceChecked);
+  const destinationLiveIndex = livePartners(destinationChecked);
   const usedDestinationIds = new Set<string>();
-  const rows: AuditRow[] = source.map((sourceFile) => {
+  const rows: AuditRow[] = sourceChecked.map((sourceFile) => {
     const exact = destinationHashes.get(sourceFile.hash ?? '') ?? [];
     const available = exact.filter((file) => !usedDestinationIds.has(file.id));
     if (available.length) {
@@ -245,7 +268,17 @@ export async function compareLibraries(
       livePair: sourceLivePairState(sourceFile, sourceLiveIndex, destinationHashes, false),
     };
   });
-  for (const file of destination) {
+  for (const file of source.filter((item) => item.supported === false || item.scanError)) {
+    rows.push({
+      id: `source:${file.id}`,
+      status: 'skipped',
+      source: file,
+      destinations: [],
+      note: file.scanError ?? file.unsupportedReason ?? 'This file was not checked.',
+      livePair: 'not-live',
+    });
+  }
+  for (const file of destinationChecked) {
     if (!usedDestinationIds.has(file.id)) {
       rows.push({
         id: `destination:${file.id}`,
@@ -255,6 +288,15 @@ export async function compareLibraries(
         livePair: localLivePairState(file, destinationLiveIndex),
       });
     }
+  }
+  for (const file of destination.filter((item) => item.supported === false || item.scanError)) {
+    rows.push({
+      id: `destination:${file.id}`,
+      status: 'skipped',
+      destinations: [file],
+      note: file.scanError ?? file.unsupportedReason ?? 'This file was not checked.',
+      livePair: 'not-live',
+    });
   }
   return {
     id: crypto.randomUUID(),
@@ -276,6 +318,7 @@ export function summary(result: AuditResult) {
     changed: count('changed'),
     duplicate: count('duplicate'),
     extra: count('extra'),
+    skipped: count('skipped'),
     unpaired: result.rows.filter((row) => row.livePair === 'unpaired').length,
   };
 }

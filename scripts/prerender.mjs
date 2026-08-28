@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 const root = new URL('../dist/site/', import.meta.url);
 const origin = 'https://photo-upload-audit.sociobot.in';
 const routes = {
-  '/': ['Photo Upload Audit — Verify every backup file', 'Compare a camera export with any backup folder. Find missing, changed, duplicate, and unpaired Live Photo files.'],
+  '/': ['Photo Upload Audit — Check photo backups', 'Check a camera export against a backup folder. Find missing, changed, skipped, duplicate, and unpaired Live Photo files.'],
   '/demo': ['Demo — Photo Upload Audit', 'Try a complete photo backup audit with sample files.'],
   '/audit': ['Audit folders — Photo Upload Audit', 'Choose two local folders and compare every media file by SHA-256.'],
   '/history': ['Saved receipts — Photo Upload Audit', 'Review saved local photo backup audit receipts.'],

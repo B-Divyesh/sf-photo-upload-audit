@@ -1,10 +1,10 @@
 [
   {
     "id": "demo-sandbox",
-    "claim": "Try a finished audit with sample data in one click",
+    "claim": "Try a finished audit with sample data in one click without writing real browser storage",
     "where": "landing primary action, demo banner, README",
     "test": "npm test -- --grep @claim:demo-sandbox",
-    "sandbox": "fresh browser context; open /demo and inspect the seeded receipt"
+    "sandbox": "fresh browser context; open /, delay its release lookup, click the sample action, and assert the seeded receipt with no localStorage or sessionStorage writes"
   },
   {
     "id": "demo-reset",
@@ -29,10 +29,17 @@
   },
   {
     "id": "hash-compare",
-    "claim": "Matches files by SHA-256 content, even when a backup name differs",
+    "claim": "Matches files by SHA-256 content, even when a backup name or timestamp differs",
     "where": "landing receipt copy, audit page, README",
     "test": "npm test -- --grep @claim:hash-compare",
-    "sandbox": "fresh browser context; select generated source and destination files with equal bytes and different names"
+    "sandbox": "fresh browser context; select generated source and destination files with equal bytes, different names, and deliberately different lastModified values"
+  },
+  {
+    "id": "all-files-reported",
+    "claim": "Lists every selected source file, including files this version cannot check",
+    "where": "audit screen, receipt, README",
+    "test": "npm test -- --grep @claim:all-files-reported",
+    "sandbox": "fresh browser context; compare matched JPG and TIFF files plus an unsupported PSD source file, then assert its skipped row and no all-clear"
   },
   {
     "id": "live-photo",
@@ -141,7 +148,7 @@
   },
   {
     "id": "checkout-health",
-    "claim": "The Archive License checkout opens with the Sociobot merchant of record",
+    "claim": "The Archive License checkout opens with Sociobot/Dodo payment processing",
     "where": "paid tier, terms page",
     "test": "npm test -- --grep @claim:checkout-health",
     "sandbox": "test request to the public checkout endpoint; assert its hosted-checkout redirect"

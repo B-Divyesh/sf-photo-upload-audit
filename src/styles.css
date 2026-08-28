@@ -86,6 +86,7 @@ main { min-height: 68vh; }
 .status.verified, .summary-strip .verified dd { color: var(--scan); }
 .status.missing, .summary-strip .missing dd { color: var(--amber); }
 .status.changed, .summary-strip .changed dd { color: var(--coral); }
+.status.skipped, .summary-strip .skipped dd { color: var(--amber); }
 .status.duplicate, .summary-strip .duplicate dd { color: var(--violet); }
 .status.extra { color: #a9c5d7; }
 .how { background: #08151a; max-width: none; padding-left: max(clamp(20px, 5vw, 72px), calc((100vw - 1296px) / 2 + 72px)); padding-right: max(clamp(20px, 5vw, 72px), calc((100vw - 1296px) / 2 + 72px)); }
@@ -166,7 +167,7 @@ footer nav { display: flex; gap: 24px; }
 .receipt-title h2 { margin: 6px 0 0; max-width: 17ch; font-size: clamp(2.1rem, 5vw, 3.7rem); }
 .receipt-note { max-width: 46ch; margin: 14px 0 0; color: var(--scan); }
 .receipt-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
-.summary-strip { margin: 40px 0 20px; display: grid; grid-template-columns: repeat(6, 1fr); border-block: 1px solid var(--line); }
+.summary-strip { margin: 40px 0 20px; display: grid; grid-template-columns: repeat(7, 1fr); border-block: 1px solid var(--line); }
 .summary-strip div { padding: 18px 16px; border-right: 1px solid var(--line); }
 .summary-strip div:last-child { border: 0; }
 .summary-strip dt { color: var(--mist); font-size: 1rem; }
@@ -215,8 +216,8 @@ td small { margin-top: 5px; color: var(--mist); }
   .frames { grid-template-columns: 1fr; }
   .frame-visual { aspect-ratio: 2; }
   .summary-strip { grid-template-columns: repeat(3, 1fr); }
-  .summary-strip div:nth-child(3) { border-right: 0; }
-  .summary-strip div:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
+  .summary-strip div:nth-child(3n) { border-right: 0; }
+  .summary-strip div:nth-child(-n+6) { border-bottom: 1px solid var(--line); }
   footer { grid-template-columns: 1fr; gap: 24px; align-items: start; }
 }
 
@@ -255,7 +256,8 @@ td small { margin-top: 5px; color: var(--mist); }
   .receipt-actions { justify-content: flex-start; }
   .summary-strip { grid-template-columns: repeat(2, 1fr); }
   .summary-strip div, .summary-strip div:nth-child(3) { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .summary-strip div:nth-child(even) { border-right: 0; }
+  .summary-strip div:nth-child(even), .summary-strip div:last-child { border-right: 0; }
+  .summary-strip div:last-child { border-bottom: 0; }
   .result-context { display: grid; gap: 6px; }
   .table-wrap { border: 0; background: transparent; overflow: visible; }
   table, tbody { display: block; min-width: 0; }
