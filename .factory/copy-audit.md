@@ -25,7 +25,7 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | Compare two folders in three steps | 6 | — |
 | Pick both folders | 3 | — |
 | Source is always first. | 4 | — |
-| Watch each hash | 3 | — |
+| Follow the file check | 4 | — |
 | The current file and count stay visible. | 7 | — |
 | Review files that need attention | 5 | — |
 | Each row says what happened. | 5 | — |

@@ -147,3 +147,16 @@ test('390px at 200% text size has no horizontal overflow', async ({ page }) => {
   await page.addStyleTag({ content: 'html { font-size: 32px !important; }' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
+
+test('privacy explains that uninstalling can retain local desktop data', async ({ page }) => {
+  await page.goto('/privacy');
+  await expect(page.getByText('Uninstalling may leave local app data behind.')).toBeVisible();
+  await expect(page.getByText("Check your operating system's app-data location before sharing the computer.")).toBeVisible();
+  await expect(page.getByText('Removing the desktop app removes its local data.')).toHaveCount(0);
+});
+
+test('landing uses a plain-language progress heading', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Follow the file check', { exact: true })).toBeVisible();
+  await expect(page.getByText('Watch each hash', { exact: true })).toHaveCount(0);
+});
