@@ -116,6 +116,7 @@ main { min-height: 68vh; }
 .spinner { width: 22px; height: 22px; border: 2px solid var(--line); border-top-color: var(--scan); border-radius: 50%; animation: spin 800ms linear infinite; }
 @keyframes spin { to { transform: rotate(1turn); } }
 .detected, .download-note { color: var(--mist); margin: 0; }
+.mac-downloads { display: flex; flex-wrap: wrap; gap: 10px; }
 .download-wait { display: grid; gap: 6px; }
 .download-wait span { color: var(--mist); }
 .boundary-copy { font-size: clamp(1.15rem, 2.5vw, 1.6rem); max-width: 45ch; }

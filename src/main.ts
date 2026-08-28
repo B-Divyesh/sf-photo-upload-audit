@@ -319,7 +319,14 @@ async function loadDownloads(): Promise<void> {
       release = await response.json() as Release;
       localStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), data: release }));
     }
-    const matchers = platform === 'macOS' ? [/\.dmg$/i] : platform === 'Windows' ? [/\.msi$/i, /\.exe$/i] : [/\.AppImage$/i, /\.deb$/i];
+    if (platform === 'macOS') {
+      const arm = release.assets.find((item) => /aarch64.*\.dmg$/i.test(item.name));
+      const intel = release.assets.find((item) => /x64.*\.dmg$/i.test(item.name));
+      if (!arm || !intel) throw new Error('No complete macOS assets');
+      panel.innerHTML = `<p class="detected">Detected: macOS · choose your processor</p><div class="mac-downloads"><a class="button primary" href="${arm.browser_download_url}">Download for Apple silicon</a><a class="button secondary" href="${intel.browser_download_url}">Download for Intel</a></div><p class="download-note">${release.tag_name} · unsigned</p><a class="arrow-link" href="${release.html_url}" rel="external">View all releases <span class="sr-only">(external site)</span></a>`;
+      return;
+    }
+    const matchers = platform === 'Windows' ? [/\.msi$/i, /\.exe$/i] : [/\.AppImage$/i, /\.deb$/i];
     const asset = matchers.flatMap((pattern) => release.assets.filter((item) => pattern.test(item.name))).at(0);
     if (!asset) throw new Error('No platform asset');
     panel.innerHTML = `<p class="detected">Detected: ${platform}</p><a class="button primary" href="${asset.browser_download_url}">Download for ${platform}</a><p class="download-note">${escapeHtml(asset.name)} · ${release.tag_name}</p><a class="arrow-link" href="${release.html_url}" rel="external">View all releases <span class="sr-only">(external site)</span></a>`;
