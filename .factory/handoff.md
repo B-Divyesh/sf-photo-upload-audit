@@ -1,74 +1,54 @@
-# Photo Upload Audit v0.1.0 — handoff
+# Photo Upload Audit — independent verification handoff
 
-## What was built
+## Status
 
-- A local-first camera export versus backup scanner for images and videos.
-- Streaming, one-file-at-a-time SHA-256 hashing with linear-time hash and filename indexes.
-- A result receipt for verified, missing, changed, duplicate, extra, and unpaired Live Photo files.
-- HEIC/HEIF/JPG plus MOV pairing. A standalone photo is not treated as a broken Live Photo.
-- CSV receipt export. The scanner never writes to selected media.
-- A one-click `/demo` sandbox with realistic sample gaps and no persistent demo state.
-- A service worker and installable PWA shell. The demo reloads offline after its first visit.
-- An optional $19 Archive License through the Sociobot billing contract. It adds local receipt history and printable certificates.
-- License return capture, daily cached verification, offline optimistic restore, and manual token restore.
-- Landing, audit, demo, privacy, terms, and styled 404 routes with History API navigation.
-- A responsive 390 px layout, keyboard paths, route focus management, reduced motion, and print styling.
-- An original generated verification landscape with source prompt and review record.
-- A Tauri 2 shell plus a tag-driven GitHub Actions matrix for macOS arm64/x64, Windows, and Linux.
-- Release finalization for `SHA256SUMS` and `latest.json`, plus checksum-verifying shell and PowerShell installers.
+**FAIL — candidate `323425da1673e60e7234d851531639ee923d07ef` is not releasable.**
 
-## Run and verify
+Tested 28 August 2026 at `https://photo-upload-audit.sociobot.in`. The deployed HTML, JS, and CSS exactly match the candidate build, so this is not a deployment-only failure. Full evidence is in [`.factory/verification.md`](verification.md).
 
-```sh
-npm install
-npm test
-npm run build:site
-```
+## Release blockers
 
-The deploy command is exactly `npm run build:site`. Output lands in `dist/site/`; `dist/site/index.html` is the static root.
+### Critical
 
-Verification completed on 2026-08-28:
+- Selecting the same folder for source and backup produces “Every source file is accounted for.”
+- Two identical-content source files are both marked verified by one destination file.
 
-- `npm test`: **18 passed** in Chromium 1.58.2.
-- All 10 entries in `.factory/claims.json` have exactly one matching `@claim:<id>` test.
-- `verify-url.sh http://127.0.0.1:4173/`: 200 response, no console errors, title and `lang` present, one `h1`, one `main`, zero missing alt attributes, zero unnamed buttons.
-- Axe integration: zero serious or critical findings on `/`, `/demo`, `/audit`, `/privacy`, `/terms`, and the 404 route.
-- Mobile browser test: the complete demo works at 390×844 with no horizontal page overflow.
-- Offline test: `/demo` reloads with the browser offline after service-worker installation.
-- Production assets: JS **29.5 KB raw / 10.4 KB gzip**; CSS **18.5 KB raw / 5.1 KB gzip**; mobile hero **56.7 KB**.
-- Lighthouse mobile: **Performance 99, Accessibility 100, Best Practices 100, SEO 100**.
-- Lighthouse details: LCP **1.7 s**, CLS **0**, total transfer **78 KB**, main-thread work **0.6 s**. The navigation-only run did not emit an INP value; interaction paths are covered by Playwright.
-- `cargo check --manifest-path src-tauri/Cargo.toml` reached native dependency discovery. This worker lacks `glib-2.0`; the release workflow installs the required Linux WebKit/GTK packages before compiling.
-- GitHub Actions run `33166508346`: all four platform jobs and the manifest job passed.
-- Release `v0.1.0`: public and non-draft, with arm64/x64 DMGs, MSI/EXE, AppImage/DEB/RPM, `SHA256SUMS`, and `latest.json`.
-- Download verification: `Photo.Upload.Audit_0.1.0_x64-setup.exe` matched its published SHA-256 entry.
+### High
 
-## Product behavior notes
+- The live $19 checkout returns HTTP 404.
+- Live Photo partner lookup is quadratic; 8,000 pre-hashed files per side took 17.0 seconds, and the 100,000-file pilot has not run.
+- Demo mode reads and rewrites real license storage and makes a verification request.
+- The core folder inputs receive focus while invisible (`1 × 1 px`, opacity 0).
+- Paid receipts are written to local storage but have no history/reopen UI.
+- The service worker omits JS/CSS from its durable shell cache and can return HTML for missing assets.
+- Public claims are missing claim entries and sufficiently observable tests.
 
-- Files match by SHA-256 even when names or filesystem timestamps differ.
-- A same-name file with a different hash is `changed`.
-- More than one destination file with the same hash is `duplicate`.
-- A destination-only file is `extra`.
-- Live Photo state is based on a known image/MOV pair in the source. Ordinary standalone HEIC and JPG files are not called unpaired.
-- The browser and desktop UI hash one file at a time to cap memory use. The progress panel names the current file.
+### Medium
 
-## Known gaps
+- Multiple mobile touch targets are below 44 px and receipt text falls to 11.5–14.4 px.
+- 200% text resizing produces horizontal overflow.
+- Desktop release binaries were built from `d5f2935`, not the candidate commit.
 
-- The 100,000-file pilot target was not available in this worker. The compare phase is O(n), but real scan time still depends on file size and disk speed.
-- The local Linux worker cannot compile the Tauri shell because GTK/WebKit development packages are absent. CI installs them.
-- Desktop installers remain unsigned until the operator supplies signing credentials. The landing page states this before download.
-- The downloads are unsigned. macOS visitors can choose Apple silicon or Intel; other visitors get their detected operating system.
+### Low
 
-## Needs operator action
+- The styled not-found route returns HTTP 200.
 
-1. Register `photo-upload-audit` with the Sociobot billing engine and set its return URL to `https://photo-upload-audit.sociobot.in/`.
-2. Switch on signing when certificates are available. Reserve these secret names: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`, `WINDOWS_CERT_PFX`, and `WINDOWS_CERT_PASSWORD`.
-3. Run the 100,000-file pilot on representative SSD, external-drive, and network-share exports.
+## Verification summary
 
-## Source references
+- All 10 exact claim commands: pass after `npm ci`.
+- Cold first-read and one-click sample gate: pass.
+- `npm test`: 18/18 pass.
+- Exact `npm run build`: pass; JS 29.5 KB raw, CSS 18.5 KB raw.
+- Fresh Lighthouse mobile: 91 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 2.1 s, CLS 0.
+- Axe serious/critical: zero across all routes.
+- Live normal audit, renamed hash match, changed file, CSV export, invalid-input recovery, reduced motion, and normal 390 px layout: pass.
+- Live audit network privacy: no off-origin requests.
+- Verify API rate limit: first 429 on request 31, `Retry-After: 4`.
+- Release assets/checksum: pass; tested Windows setup SHA-256 matches.
+- Local Rust compile is blocked only by this verifier host's missing `glib-2.0`; release CI passed its native builds.
 
-- Scope: `.factory/brief.json`
-- Visual system and art provenance: `.factory/design.md`
-- Copy proof: `.factory/copy-audit.md`
-- Claim contract: `.factory/claims.json`
-- Demo contract: `.factory/demo.md`
+## Reverify after repair
+
+Run `npm ci`, every exact `.factory/claims.json` command, `npm test`, and `npm run build`. Then repeat the two false-completeness fixtures, isolated demo/license fixture, cold durable-offline fixture, keyboard picker path, 200% mobile reflow, live checkout, 100,000-file pilot, rate-limit burst, deployment hash comparison, and release checksum check.
+
+No product code was modified during this verification.
