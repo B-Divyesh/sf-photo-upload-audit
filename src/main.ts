@@ -15,12 +15,14 @@ const state: {
   filter: AuditStatus | 'all';
   demo: boolean;
   paid: boolean;
-} = { source: [], destination: [], busy: false, error: '', filter: 'all', demo: false, paid: false };
+  receiptNote: string;
+} = { source: [], destination: [], busy: false, error: '', filter: 'all', demo: false, paid: false, receiptNote: '' };
 
 const routeMeta: Record<string, { title: string; description: string }> = {
   '/': { title: 'Photo Upload Audit — Verify every backup file', description: 'Compare a camera export with any backup folder. Find missing, changed, duplicate, and unpaired Live Photo files.' },
   '/demo': { title: 'Demo — Photo Upload Audit', description: 'Try a complete photo backup audit with sample files.' },
   '/audit': { title: 'Audit folders — Photo Upload Audit', description: 'Choose two local folders and compare every media file by SHA-256.' },
+  '/history': { title: 'Saved receipts — Photo Upload Audit', description: 'Review saved local photo backup audit receipts.' },
   '/privacy': { title: 'Privacy — Photo Upload Audit', description: 'How Photo Upload Audit handles files and license data.' },
   '/terms': { title: 'Terms — Photo Upload Audit', description: 'Terms for using Photo Upload Audit.' },
   '/404': { title: 'Page not found — Photo Upload Audit', description: 'This page could not be found.' },
@@ -37,8 +39,10 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]!);
 }
 
-function nav(path: string): void {
+async function nav(path: string): Promise<void> {
   history.pushState({}, '', path);
+  if (path === '/demo') state.result = undefined;
+  await syncLicense(path);
   void render(true);
 }
 
@@ -51,6 +55,7 @@ function shell(content: string, path: string): string {
       <nav aria-label="Main navigation">
         <a href="/demo" data-nav ${path === '/demo' ? 'aria-current="page"' : ''}>Demo</a>
         <a href="/audit" data-nav ${path === '/audit' ? 'aria-current="page"' : ''}>Audit</a>
+        <a href="/history" data-nav ${path === '/history' ? 'aria-current="page"' : ''}>History</a>
         <a href="/privacy" data-nav ${path === '/privacy' ? 'aria-current="page"' : ''}>Privacy</a>
       </nav>
     </header>
@@ -139,7 +144,7 @@ function downloadsSection(): string {
 }
 
 function paidSection(): string {
-  return `<section class="paid section-grid" aria-labelledby="paid-title"><div class="section-intro"><p class="eyebrow">Archive License</p><h2 id="paid-title">Keep a record of every audit</h2><p>$19 one-time. Save audit history on this device and print verification certificates. Scanning and CSV export stay free.</p></div><div class="license-panel"><p class="license-price"><strong>$19</strong><span>one-time purchase</span></p><a class="button primary" href="${checkoutUrl}">Buy Archive License</a><button class="text-button" data-action="show-license">Have a license? Paste it</button><form class="license-form" data-license-form hidden><label for="license-token">License token</label><div><input id="license-token" name="license" autocomplete="off" required /><button class="button secondary" type="submit">Verify license</button></div><p class="form-note" data-license-note aria-live="polite"></p></form><p class="fine-print">Sociobot/Dodo is the merchant of record. Refunds are handled there.</p></div></section>`;
+  return `<section class="paid section-grid" aria-labelledby="paid-title"><div class="section-intro"><p class="eyebrow">Archive License</p><h2 id="paid-title">Keep a record of every audit</h2><p>$19 one-time. Save up to 25 local audit receipts and print verification certificates. Scanning and CSV export stay free.</p></div><div class="license-panel"><p class="license-price"><strong>$19</strong><span>one-time purchase</span></p><a class="button primary" href="${checkoutUrl}">Buy Archive License</a><a class="text-link" href="/history" data-nav>Review saved receipts</a><button class="text-button" data-action="show-license">Have a license? Paste it</button><form class="license-form" data-license-form hidden><label for="license-token">License token</label><div><input id="license-token" name="license" autocomplete="off" required /><button class="button secondary" type="submit">Verify license</button></div><p class="form-note" data-license-note aria-live="polite"></p></form><p class="fine-print">Sociobot/Dodo is the merchant of record. Refunds are handled there.</p></div></section>`;
 }
 
 function auditPage(): string {
@@ -166,7 +171,8 @@ function pickerView(): string {
 
 function folderPicker(kind: 'source' | 'destination', label: string, files: MediaFile[]): string {
   const description = files.length ? `${files.length.toLocaleString()} media files ready` : 'No folder chosen';
-  return `<div class="folder-picker ${files.length ? 'has-files' : ''}"><span class="folder-number">${label}</span><strong>${kind === 'source' ? 'What left the phone' : 'Where it should be'}</strong><p>${description}</p><label class="button secondary" for="${kind}-folder">Choose ${kind === 'source' ? 'export' : 'backup'} folder</label><input class="visually-hidden-input" id="${kind}-folder" type="file" webkitdirectory multiple data-folder="${kind}" /></div>`;
+  const controlLabel = `Choose ${kind === 'source' ? 'export' : 'backup'} folder`;
+  return `<div class="folder-picker ${files.length ? 'has-files' : ''}"><span class="folder-number">${label}</span><strong>${kind === 'source' ? 'What left the phone' : 'Where it should be'}</strong><p id="${kind}-folder-help">${description}</p><label class="folder-input-label" for="${kind}-folder">${controlLabel}</label><input class="folder-input" id="${kind}-folder" type="file" webkitdirectory multiple data-folder="${kind}" aria-describedby="${kind}-folder-help" /></div>`;
 }
 
 function resultView(): string {
@@ -175,7 +181,7 @@ function resultView(): string {
   const shown = state.filter === 'all' ? state.result.rows : state.result.rows.filter((row) => row.status === state.filter);
   const filters: Array<AuditStatus | 'all'> = ['all', 'missing', 'changed', 'duplicate', 'extra', 'verified'];
   return `<section class="results" aria-labelledby="receipt-title">
-    <div class="receipt-title"><div><p class="eyebrow">Audit receipt · ${new Date(state.result.createdAt).toLocaleDateString()}</p><h2 id="receipt-title">${counts.missing + counts.changed === 0 ? 'Every source file is accounted for' : `${counts.missing + counts.changed} source files need attention`}</h2></div><div class="receipt-actions"><button class="button secondary" data-action="export-csv">Export CSV</button>${state.paid && !state.demo ? '<button class="button secondary" data-action="save-receipt">Save receipt</button><button class="button secondary" data-action="print">Print certificate</button>' : ''}${!state.demo ? '<button class="text-button" data-action="new-audit">Start another audit</button>' : ''}</div></div>
+    <div class="receipt-title"><div><p class="eyebrow">Audit receipt · ${new Date(state.result.createdAt).toLocaleDateString()}</p><h2 id="receipt-title">${counts.missing + counts.changed === 0 ? 'Every source file is accounted for' : `${counts.missing + counts.changed} source files need attention`}</h2>${state.receiptNote ? `<p class="receipt-note" role="status">${escapeHtml(state.receiptNote)}</p>` : ''}</div><div class="receipt-actions"><button class="button secondary" data-action="export-csv">Export CSV</button>${state.paid && !state.demo ? '<button class="button secondary" data-action="save-receipt">Save receipt</button><button class="button secondary" data-action="print">Print certificate</button>' : ''}${!state.demo ? '<button class="text-button" data-action="new-audit">Start another audit</button>' : ''}</div></div>
     <dl class="summary-strip"><div><dt>Source files</dt><dd>${state.result.sourceCount}</dd></div><div class="verified"><dt>Verified</dt><dd>${counts.verified}</dd></div><div class="missing"><dt>Missing</dt><dd>${counts.missing}</dd></div><div class="changed"><dt>Changed</dt><dd>${counts.changed}</dd></div><div class="duplicate"><dt>Duplicates</dt><dd>${counts.duplicate}</dd></div><div><dt>Unpaired</dt><dd>${counts.unpaired}</dd></div></dl>
     <div class="result-context"><span><strong>Source:</strong> ${escapeHtml(state.result.sourceLabel)}</span><span><strong>Backup:</strong> ${escapeHtml(state.result.destinationLabel)}</span></div>
     <div class="filters" aria-label="Filter results">${filters.map((filter) => `<button aria-pressed="${state.filter === filter}" data-filter="${filter}">${filter === 'all' ? `All ${state.result!.rows.length}` : `${filter} ${counts[filter as keyof typeof counts] ?? ''}`}</button>`).join('')}</div>
@@ -188,20 +194,30 @@ function legalPage(kind: 'privacy' | 'terms'): string {
   return `<article class="legal"><p class="eyebrow">Terms</p><h1>Terms for using the audit</h1><p class="updated">Effective 28 August 2026</p><h2>What the app does</h2><p>The app compares selected files and reports what it finds. It never replaces a second backup or a restore test.</p><h2>Your responsibility</h2><p>Review the receipt before deleting any original. Keep another copy of important media.</p><h2>Archive License</h2><p>The Archive License costs $19 once. It adds saved receipts and printable certificates. Sociobot/Dodo is the merchant of record and handles refunds. A refund revokes the license.</p><h2>Warranty</h2><p>The software is provided as-is under the MIT License. We do not promise that storage hardware, operating systems, or unrelated backup tools will work.</p><h2>Acceptable use</h2><p>Do not use the billing service unlawfully or try to bypass license checks.</p><h2>Contact</h2><p>Email <a href="mailto:support@sociobot.in">support@sociobot.in</a> with a terms question.</p></article>`;
 }
 
+function receiptHistory(): AuditResult[] {
+  try { return JSON.parse(localStorage.getItem('audit:receipts') || '[]') as AuditResult[]; } catch { return []; }
+}
+
+function historyPage(): string {
+  const receipts = receiptHistory();
+  return `<section class="workbench-page history-page"><div class="workbench-heading"><p class="eyebrow">Archive License</p><h1>Review saved audit receipts</h1><p>Saved receipts stay in this browser. They do not include the original media files.</p></div>${receipts.length ? `<ol class="receipt-history">${receipts.map((receipt, index) => { const counts = summary(receipt); return `<li><div><strong>${escapeHtml(receipt.sourceLabel)} → ${escapeHtml(receipt.destinationLabel)}</strong><span>${new Date(receipt.createdAt).toLocaleString()} · ${receipt.sourceCount} source files · ${counts.missing + counts.changed} need attention</span></div><div><button class="button secondary" data-open-receipt="${index}">Open receipt</button><button class="text-button danger-button" data-delete-receipt="${index}">Remove</button></div></li>`; }).join('')}</ol>` : `<section class="empty-history"><h2>No saved receipts yet</h2><p>Complete an audit, then use Save receipt to keep it here.</p><a class="button primary" href="/audit" data-nav>Start an audit</a></section>`}</section>`;
+}
+
 function notFound(): string {
   return `<section class="not-found"><div class="lost-pane" aria-hidden="true"><span></span><span></span><span></span><i>?</i></div><p class="eyebrow">404 · unmatched path</p><h1>This page is missing from the archive</h1><p>The address does not match any page in this app.</p><a class="button primary" href="/" data-nav>Return home</a></section>`;
 }
 
 async function render(focusHeading = false): Promise<void> {
   const path = currentPath();
+  const changingDemoMode = state.demo !== (path === '/demo');
   state.demo = path === '/demo';
   const meta = routeMeta[path];
   document.title = meta.title;
   document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', meta.description);
   document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', `https://photo-upload-audit.sociobot.in${path === '/' ? '/' : path}`);
-  if (state.demo && !state.result) state.result = await makeSampleAudit();
+  if (state.demo && (changingDemoMode || !state.result)) state.result = await makeSampleAudit();
   if (!state.demo && path !== '/audit') state.result = undefined;
-  const content = path === '/' ? home() : path === '/demo' || path === '/audit' ? auditPage() : path === '/privacy' ? legalPage('privacy') : path === '/terms' ? legalPage('terms') : notFound();
+  const content = path === '/' ? home() : path === '/demo' || path === '/audit' ? auditPage() : path === '/history' ? historyPage() : path === '/privacy' ? legalPage('privacy') : path === '/terms' ? legalPage('terms') : notFound();
   app.innerHTML = shell(content, path);
   bindEvents();
   if (path === '/') void loadDownloads();
@@ -218,7 +234,7 @@ function bindEvents(): void {
   document.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((link) => link.addEventListener('click', (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    nav(link.pathname);
+    void nav(link.pathname);
   }));
   document.querySelectorAll<HTMLInputElement>('[data-folder]').forEach((input) => input.addEventListener('change', () => {
     const kind = input.dataset.folder as 'source' | 'destination';
@@ -232,6 +248,17 @@ function bindEvents(): void {
   document.querySelector('[data-action="export-csv"]')?.addEventListener('click', exportCsv);
   document.querySelector('[data-action="save-receipt"]')?.addEventListener('click', saveReceipt);
   document.querySelector('[data-action="print"]')?.addEventListener('click', () => print());
+  document.querySelectorAll<HTMLButtonElement>('[data-open-receipt]').forEach((button) => button.addEventListener('click', () => {
+    const receipt = receiptHistory()[Number(button.dataset.openReceipt)];
+    if (!receipt) return;
+    state.result = receipt; state.filter = 'all'; void nav('/audit');
+  }));
+  document.querySelectorAll<HTMLButtonElement>('[data-delete-receipt]').forEach((button) => button.addEventListener('click', () => {
+    const history = receiptHistory();
+    history.splice(Number(button.dataset.deleteReceipt), 1);
+    localStorage.setItem('audit:receipts', JSON.stringify(history));
+    void render();
+  }));
   document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((button) => button.addEventListener('click', () => { state.filter = button.dataset.filter as typeof state.filter; void render(); }));
   document.querySelector('[data-action="show-license"]')?.addEventListener('click', () => {
     const form = document.querySelector<HTMLFormElement>('[data-license-form]');
@@ -252,6 +279,11 @@ function bindEvents(): void {
 
 async function runScan(): Promise<void> {
   if (!state.source.length || !state.destination.length) { state.error = 'A source folder or backup folder is missing.'; await render(); return; }
+  if (rootLabel(state.source).toLocaleLowerCase() === rootLabel(state.destination).toLocaleLowerCase()) {
+    state.error = 'Choose two different folders. The source and backup folder have the same root name.';
+    await render();
+    return;
+  }
   state.busy = true;
   state.error = '';
   state.progress = { stage: 'source', current: 0, total: state.source.length, fileName: '' };
@@ -297,8 +329,14 @@ function exportCsv(): void {
 function saveReceipt(): void {
   if (!state.result || state.demo) return;
   const safeResult = JSON.parse(JSON.stringify(state.result, (key, value) => key === 'file' ? undefined : value));
-  const history = JSON.parse(localStorage.getItem('audit:receipts') || '[]') as AuditResult[];
-  localStorage.setItem('audit:receipts', JSON.stringify([safeResult, ...history].slice(0, 25)));
+  const history = receiptHistory();
+  if (history.length >= 25) {
+    state.receiptNote = 'Your 25 saved receipt limit is full. Remove a saved receipt before adding another.';
+    void render();
+    return;
+  }
+  localStorage.setItem('audit:receipts', JSON.stringify([safeResult, ...history]));
+  state.receiptNote = 'Receipt saved locally. Open receipt history to review it.';
   const button = document.querySelector<HTMLButtonElement>('[data-action="save-receipt"]');
   if (button) { button.textContent = 'Receipt saved'; button.disabled = true; }
 }
@@ -308,7 +346,7 @@ async function loadDownloads(): Promise<void> {
   if (!panel) return;
   const platform = /Mac/i.test(navigator.userAgent) ? 'macOS' : /Windows/i.test(navigator.userAgent) ? 'Windows' : 'Linux';
   try {
-    if (['127.0.0.1', 'localhost'].includes(location.hostname)) throw new Error('Skip release lookup in local development');
+    if (['127.0.0.1', 'localhost'].includes(location.hostname) && !new URLSearchParams(location.search).has('release-preview')) throw new Error('Skip release lookup in local development');
     const cacheKey = 'release:photo-upload-audit';
     const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null') as { at: number; data: Release } | null;
     let release: Release;
@@ -337,11 +375,16 @@ async function loadDownloads(): Promise<void> {
 
 interface Release { tag_name: string; html_url: string; assets: Array<{ name: string; browser_download_url: string }> }
 
-window.addEventListener('popstate', () => void render(true));
-
-async function start(): Promise<void> {
+async function syncLicense(path: string): Promise<void> {
+  if (path === '/demo') { state.paid = false; return; }
   captureLicenseFromUrl();
   state.paid = (await licenseState()).active;
+}
+
+window.addEventListener('popstate', () => void syncLicense(currentPath()).then(() => render(true)));
+
+async function start(): Promise<void> {
+  await syncLicense(currentPath());
   await render();
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
 }

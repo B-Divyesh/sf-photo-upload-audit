@@ -4,7 +4,8 @@ export default defineConfig({
   testDir: './tests',
   timeout: 30_000,
   expect: { timeout: 8_000 },
-  fullyParallel: false,
+  fullyParallel: true,
+  workers: 4,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:4173',

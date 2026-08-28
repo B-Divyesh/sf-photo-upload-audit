@@ -41,9 +41,10 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | It does not upload photos, recognise faces, or replace your backup tool. | 12 | — |
 | Keep a record of every audit | 6 | — |
 | $19 one-time. | 2 | — |
-| Save audit history on this device and print verification certificates. | 10 | — |
+| Save up to 25 local audit receipts and print verification certificates. | 11 | — |
 | Scanning and CSV export stay free. | 6 | — |
 | Buy Archive License | 3 | — |
+| Review saved receipts | 3 | — |
 | Have a license? Paste it. | 5 | — |
 | Sociobot/Dodo is the merchant of record. | 6 | — |
 | Refunds are handled there. | 4 | — |
@@ -58,4 +59,5 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | File-content fingerprint | SHA-256 hash |
 | HEIC/JPG plus MOV unit | Live Photo pair |
 | Optional paid entitlement | Archive License |
+| Saved paid audit output | receipt history |
 | Seeded isolated experience | demo |

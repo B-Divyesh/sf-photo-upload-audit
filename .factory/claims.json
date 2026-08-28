@@ -68,5 +68,54 @@
     "where": "landing paid section, terms page, README",
     "test": "npm test -- --grep @claim:archive-license",
     "sandbox": "fresh browser context with a cached valid test verdict; complete a fixture audit, save it, and invoke print"
+  },
+  {
+    "id": "classifications",
+    "claim": "Reports missing, changed, duplicate, and extra files",
+    "where": "landing preview, audit receipt, README",
+    "test": "npm test -- --grep @claim:classifications",
+    "sandbox": "fresh browser context; filter the demo receipt once for each result class"
+  },
+  {
+    "id": "no-analytics",
+    "claim": "This version has no analytics, advertising, or tracking scripts",
+    "where": "privacy page",
+    "test": "npm test -- --grep @claim:no-analytics",
+    "sandbox": "fresh browser context; load the landing page and enter the sample audit while recording every request"
+  },
+  {
+    "id": "desktop-downloads",
+    "claim": "Desktop installers are available for the detected platform when a release is published",
+    "where": "landing desktop section, README",
+    "test": "npm test -- --grep @claim:desktop-downloads",
+    "sandbox": "fresh browser context; mock a published Linux release and assert the detected-platform download URL"
+  },
+  {
+    "id": "receipt-limit",
+    "claim": "The Archive License saves up to 25 local receipts",
+    "where": "paid tier, README",
+    "test": "npm test -- --grep @claim:receipt-limit",
+    "sandbox": "fresh browser context with 25 saved fixture receipts and a cached valid verdict; try to save one more"
+  },
+  {
+    "id": "checkout-health",
+    "claim": "The Archive License checkout opens with the Sociobot merchant of record",
+    "where": "paid tier, terms page",
+    "test": "npm test -- --grep @claim:checkout-health",
+    "sandbox": "test request to the public checkout endpoint; assert its hosted-checkout redirect"
+  },
+  {
+    "id": "same-folder-safe",
+    "claim": "The app rejects selecting the same folder as source and backup",
+    "where": "README, audit error state",
+    "test": "npm test -- --grep @claim:same-folder-safe",
+    "sandbox": "fresh browser context; select the same directory fixture for both folder inputs and attempt an audit"
+  },
+  {
+    "id": "one-to-one-match",
+    "claim": "One backup file can account for only one source original",
+    "where": "README",
+    "test": "npm test -- --grep @claim:one-to-one-match",
+    "sandbox": "fresh browser context; compare two identical source files against one identical backup file"
   }
 ]

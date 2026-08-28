@@ -2,7 +2,7 @@
 
 Verify every original, video, and Live Photo sidecar before clearing your phone.
 
-Photo Upload Audit is for iPhone and Android owners who copy camera exports to a disk or server. It compares every supported media file by SHA-256 content, not timestamps. The receipt separates verified, missing, changed, duplicate, extra, and unpaired files.
+Photo Upload Audit is for iPhone and Android owners who copy camera exports to a disk or server. It compares every supported media file by SHA-256 content, not timestamps. The receipt separates verified, missing, changed, duplicate, extra, and unpaired files. It refuses to compare a folder with itself and assigns each backup file to only one source original.
 
 The scanner is read-only. Media contents, names, hashes, and reports stay on your device. Core scanning and CSV export work without an account or license.
 
@@ -50,7 +50,7 @@ Tags matching `v*` run [the release workflow](.github/workflows/release.yml). It
 
 ## Archive License
 
-The optional Archive License costs $19 once. It saves up to 25 audit receipts on the device and adds printable certificates. Scanning and CSV export stay free. Checkout and license verification use the Sociobot billing API; photo data is never included in those requests.
+The optional Archive License costs $19 once. It saves up to 25 audit receipts on the device and adds printable certificates. Use `/history` to review or remove saved receipts. Scanning and CSV export stay free. Checkout and license verification use the Sociobot billing API; photo data is never included in those requests.
 
 ## Deploy
 
