@@ -125,7 +125,7 @@ function home(): string {
     ${downloadsSection()}
     <section class="boundaries section-grid" aria-labelledby="privacy-title">
       <div class="section-intro"><p class="eyebrow">Clear boundaries</p><h2 id="privacy-title">Your photo data stays on your device</h2></div>
-      <div class="boundary-copy"><p>The app reads the folders you choose. It never moves, edits, or deletes media.</p><p>No photo index or filename is sent to us. License checks send only the license token.</p><p>It does not upload photos, recognise faces, or replace your backup tool.</p></div>
+      <div class="boundary-copy"><p>The app reads the folders you choose. It never moves, edits, or deletes media.</p><p>No photo index or filename is sent to us. License checks send only the license token.</p><p>It checks two folders. Keep your existing backup and complete a restore test.</p></div>
     </section>
     ${paidSection()}`;
 }

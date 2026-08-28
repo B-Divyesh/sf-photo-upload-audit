@@ -214,6 +214,18 @@ test('@claim:desktop-downloads shows a usable detected-platform installer link',
   await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', /releases\/download\/v0\.1\.1\//);
 });
 
+test('@claim:desktop-release-formats verifies every promised published installer format and unsigned notice', async ({ request }) => {
+  const response = await request.get('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest');
+  expect(response.ok()).toBe(true);
+  const release = await response.json() as { body: string; assets: Array<{ name: string }> };
+  const names = release.assets.map((asset) => asset.name);
+  expect(release.body).toContain('Unsigned desktop installers for Photo Upload Audit.');
+  expect(names.some((name) => /\.dmg$/i.test(name))).toBe(true);
+  expect(names.some((name) => /\.(msi|exe)$/i.test(name))).toBe(true);
+  expect(names.some((name) => /\.appimage$/i.test(name))).toBe(true);
+  expect(names.some((name) => /\.deb$/i.test(name))).toBe(true);
+});
+
 test('@claim:release-integrity-files verifies a published release checksum', async ({ request }) => {
   const response = await request.get('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest');
   expect(response.ok()).toBe(true);
@@ -229,8 +241,13 @@ test('@claim:release-integrity-files verifies a published release checksum', asy
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(sumText.match(new RegExp(`^([a-f0-9]{64})\\s+\\*?${asset.name.replaceAll('.', '\\.')}$`, 'm'))?.[1]);
 });
 
-test('@claim:unsigned-installers names the exact unsigned release version', async ({ page }) => {
+test('@claim:unsigned-installers names the exact published unsigned release version', async ({ page, request }) => {
   const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { version: string };
+  const response = await request.get('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest');
+  expect(response.ok()).toBe(true);
+  const release = await response.json() as { tag_name: string; body: string };
+  expect(release.tag_name).toBe(`v${packageJson.version}`);
+  expect(release.body).toContain('Unsigned desktop installers for Photo Upload Audit.');
   await page.goto('/');
   await expect(page.getByText(`Desktop installers for v${packageJson.version} are unsigned.`)).toBeVisible();
 });

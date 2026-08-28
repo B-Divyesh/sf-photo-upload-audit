@@ -112,6 +112,13 @@
     "sandbox": "fresh browser context; mock a published Linux release and assert the detected-platform download URL"
   },
   {
+    "id": "desktop-release-formats",
+    "claim": "Published desktop releases include unsigned .dmg, .msi or .exe, .AppImage, and .deb installers",
+    "where": "README, release workflow",
+    "test": "npm test -- --grep @claim:desktop-release-formats",
+    "sandbox": "published GitHub release API; assert the unsigned release notice and macOS, Windows, AppImage, and Debian assets"
+  },
+  {
     "id": "release-integrity-files",
     "claim": "Desktop releases include SHA256SUMS and latest.json",
     "where": "README, release workflow",

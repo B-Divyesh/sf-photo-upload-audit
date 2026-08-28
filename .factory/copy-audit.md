@@ -37,7 +37,8 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 | It never moves, edits, or deletes media. | 7 | — |
 | No photo index or filename is sent to us. | 9 | — |
 | License checks send only the license token. | 7 | — |
-| It does not upload photos, recognise faces, or replace your backup tool. | 12 | — |
+| It checks two folders. | 4 | — |
+| Keep your existing backup and complete a restore test. | 9 | — |
 | Keep up to 25 audit receipts | 7 | — |
 | $19 one-time. | 2 | — |
 | Save up to 25 local audit receipts and print verification certificates. | 11 | — |
@@ -65,3 +66,5 @@ Audited 2026-08-28. Counts treat hyphenated terms and numbers as one word. Navig
 Updated after review 1. The landing has no sentence over 22 words and no banned marketing word. Source is consistently the first folder rather than a left-only promise, so the wording remains true when controls stack on a phone.
 
 Updated after review 3. The persistent demo action is included above and maps to the `demo-reset` claim. Compact all-caps scan labels (for example `SCAN 07/14`) are decorative metadata; every explanatory sentence and control label uses at least 16 px on a phone.
+
+Updated after review 4. The boundary section now gives the user an honest backup and restore-test next step. It makes no untestable absence-of-feature promises.
