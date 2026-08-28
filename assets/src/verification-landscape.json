@@ -1,0 +1,8 @@
+{
+  "generator": "factory-image via /opt/fleet/lib/gen-image.sh",
+  "date": "2026-08-28",
+  "size": "1536x1024",
+  "quality": "high",
+  "prompt": "Use case: stylized-concept. Asset type: wide landing hero for an offline photo-backup audit utility. Scene: abstract dark data landscape with a calm horizon. Subject: two translucent archival shelves made of stacked photo and video panes, separated by a narrow luminous verification channel; a few clearly visible amber gaps and coral mismatches; no interface screenshot. Style: premium editorial 3D illustration, precise and calm, not futuristic spectacle. Materials: smoked teal glass, fine etched grid lines, tiny pearl-like checksum points, subtle film-edge details. Lighting: internal cyan glow with restrained amber and coral accents, deep inky shadows. Composition: wide isometric scene, main structures on right and center, useful dark negative space at upper left, crisp foreground, soft distant haze. Palette: midnight ink, sea glass, electric mint, archive amber, signal coral. No text, no letters, no numbers, no logos, no watermark, no people, no faces, no phones, no laptops, no cloud icons, no padlocks, no generic gradient blobs, no neon cyberpunk city, no excessive bloom, no illegible UI, no brands.",
+  "review": "Accepted: no text, logos, human figures, visible seams, or misleading interface elements. Geometry is coherent and palette matches the thesis."
+}
