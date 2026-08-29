@@ -46,7 +46,7 @@ The desktop shell uses Tauri 2. Start it in development with:
 npm run tauri dev
 ```
 
-Tags matching `v*` run [the release workflow](.github/workflows/release.yml). Published releases include unsigned `.dmg`, `.msi` or `.exe`, `.AppImage`, and `.deb` installers. They also attach `SHA256SUMS` and `latest.json`; that manifest names the release source commit. The release claims check the published formats, notice, checksum, and Debian package build identity.
+Tags matching `v*` run [the release workflow](.github/workflows/release.yml). Published releases include unsigned `.dmg`, `.msi` or `.exe`, `.AppImage`, and `.deb` installers. Each release also attaches `SHA256SUMS` and `latest.json`. The manifest names the release source commit. Claims check formats, notice, checksum, and Debian package build identity.
 
 ## Archive License
 

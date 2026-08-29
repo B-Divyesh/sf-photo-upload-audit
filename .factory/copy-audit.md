@@ -1,6 +1,6 @@
 # Landing page copy audit
 
-Audited 2026-08-28 for polish round 6. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
+Audited 2026-08-29 for polish round 7. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
 
 | Landing text | Words | Flag |
 |---|---:|---|
@@ -34,7 +34,7 @@ Audited 2026-08-28 for polish round 6. Counts treat hyphenated terms, numbers, p
 | Review files that need attention | 5 | — |
 | Each row says what happened. | 5 | — |
 | Download the desktop app | 4 | — |
-| Desktop installers for v0.1.2 are unsigned. | 6 | — |
+| Desktop installers for v0.1.4 are unsigned. | 6 | — |
 | Checking desktop releases… | 3 | — |
 | View all releases | 3 | — |
 | Your photo data stays on your device | 7 | — |
@@ -54,7 +54,7 @@ Audited 2026-08-28 for polish round 6. Counts treat hyphenated terms, numbers, p
 | Sociobot/Dodo processes your payment. | 4 | — |
 | Email support@sociobot.in with billing questions. | 5 | — |
 | Check your backup before clearing your phone. | 7 | — |
-| v0.1.2 · desktop app · files stay on your device | 8 | — |
+| v0.1.4 · build d8d5ac9dc4c8 · desktop app · files stay on your device | 10 | — |
 
 ## Terminology
 
@@ -70,7 +70,7 @@ Audited 2026-08-28 for polish round 6. Counts treat hyphenated terms, numbers, p
 | Saved paid audit output | saved receipt |
 | Seeded isolated experience | demo |
 
-## Round-6 checks
+## Round-7 checks
 
 - The first screen says the job, audience, first action, outcome, and three plain facts in one viewport at 390 px and 1440 px.
 - “Every” is backed by a receipt that lists every selected source entry. Unsupported entries are shown as skipped and prevent the all-clear.
@@ -78,3 +78,5 @@ Audited 2026-08-28 for polish round 6. Counts treat hyphenated terms, numbers, p
 - Terms gives deletion advice without claiming that the product replaces a backup or restore test.
 - The Audit description names the supported-media boundary and says unchecked files remain visible.
 - Saved receipt history says original media files are not included. Privacy offers a labelled control to clear saved license and receipt data.
+- Verified folder handles reject the same directory. Browser folder inputs show an identity warning and never produce an all-clear.
+- The footer displays the release source build. The landing withholds a stale installer when its release tag or source commit differs.
