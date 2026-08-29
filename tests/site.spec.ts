@@ -32,7 +32,7 @@ test('first screen states the job, audience, sample action, outcome, and three f
     await page.setViewportSize(viewport);
     await page.goto('/');
     const firstScreen = [
-      page.getByRole('heading', { level: 1, name: 'Check every photo before clearing space' }),
+      page.getByRole('heading', { level: 1, name: 'Check which photos reached your backup' }),
       page.getByText('For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space.'),
       page.getByRole('link', { name: 'Try it with sample data' }),
       page.getByText('See a finished audit in one click.'),
@@ -108,7 +108,7 @@ test('phone scan progress keeps its status and current filename at 16px', async 
   await page.goto('/audit');
   await page.locator('#source-folder').setInputFiles(fixture('hash-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('hash-destination'));
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   const progress = page.locator('.scan-progress');
   await expect(progress).toBeVisible();
   const sizes = await progress.locator('span, strong, p').evaluateAll((elements) => elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize)));
@@ -144,11 +144,11 @@ test('@claim:same-folder-safe rejects the same verified folder and withholds an 
   await page.goto('/audit');
   await page.getByRole('button', { name: 'Choose export folder' }).click();
   await page.getByRole('button', { name: 'Choose backup folder' }).click();
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('alert')).toContainText('The source and backup folder are the same folder. Choose a different backup folder, then compare again.');
-  await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
+  await expect(page.getByText('No source files need attention')).toHaveCount(0);
   await page.getByRole('button', { name: 'Choose backup folder' }).click();
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByText('1 source file needs attention')).toBeVisible();
 
   // Browser folder inputs cannot establish canonical directory identity. They
@@ -174,16 +174,16 @@ test('@claim:same-folder-safe rejects the same verified folder and withholds an 
     }, destinationBody);
   };
   await selectFallbackFiles('same folder', 'same folder');
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   await expect(page.getByText('This receipt cannot confirm your backup.')).toBeVisible();
-  await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
+  await expect(page.getByText('No source files need attention')).toHaveCount(0);
 
   // Different folders can commonly share a name such as DCIM. The fallback
   // must not reject them as identical; it simply keeps the honest warning.
   await page.goto('/audit');
   await selectFallbackFiles('camera export', 'different backup');
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   await expect(page.getByRole('alert')).not.toContainText('same folder');
 });
@@ -211,7 +211,7 @@ test('@claim:scan-progress keeps the current file and count visible during hashi
   await page.goto('/audit');
   await page.locator('#source-folder').setInputFiles(fixture('hash-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('hash-destination'));
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   const progress = page.locator('.scan-progress');
   await expect(progress).toBeVisible();
   await expect(progress).toContainText(/1 \/ 2/);
@@ -263,7 +263,7 @@ test('@claim:one-to-one-match allocates one backup file to at most one identical
   await page.goto('/audit');
   await page.locator('#source-folder').setInputFiles(fixture('duplicate-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('duplicate-destination'));
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   await page.getByRole('button', { name: 'missing 1' }).click();
   await expect(page.getByRole('cell', { name: 'No matching backup file' })).toBeVisible();
@@ -276,7 +276,7 @@ test('demo startup never reads or verifies a real license', async ({ page }) => 
   await page.addInitScript(() => localStorage.setItem('sb_license:photo-upload-audit', 'real-user-token'));
   await page.route('https://api.sociobot.in/**', (route) => { licenseRequest = true; return route.abort(); });
   await page.goto('/demo');
-  await expect(page.getByRole('heading', { name: 'Find every gap in a photo backup' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Find gaps in a photo backup' })).toBeVisible();
   expect(licenseRequest).toBe(false);
   expect(await page.evaluate(() => localStorage.getItem('sb_license:photo-upload-audit'))).toBe('real-user-token');
   expect(await page.evaluate(() => localStorage.getItem('sb_license_verdict:photo-upload-audit'))).toBeNull();
@@ -342,6 +342,21 @@ test('landing section labels name their product-specific content', async ({ page
   await expect(page.getByText('Privacy and backup limits', { exact: true })).toBeVisible();
   await expect(page.getByText('Inside the app', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Clear boundaries', { exact: true })).toHaveCount(0);
+});
+
+test('public comparison copy qualifies the supported-media boundary', async ({ page }) => {
+  await page.goto('/');
+  const landing = await page.locator('body').innerText();
+  await page.goto('/audit');
+  const audit = await page.locator('body').innerText();
+  const readme = await readFile('README.md', 'utf8');
+  const copy = `${landing}\n${audit}\n${readme}`;
+  const unqualifiedComparison = /\b(?:every|each)\s+(?!supported\b|selected\b|backup\b|release\b|row\b)(?:photo|photos|file|files|original|originals|video|videos|live photo pairs?)\b/i;
+  expect(copy).not.toMatch(unqualifiedComparison);
+  expect(landing).toContain('Check which photos reached your backup');
+  expect(landing).toContain('The app compares each supported file’s contents, even when its name changed.');
+  expect(audit).toContain('Create audit receipt');
+  expect(readme).toContain('Check originals, videos, and Live Photo pairs before clearing your phone.');
 });
 
 test('claims manifest has one current test for every declared claim', async () => {

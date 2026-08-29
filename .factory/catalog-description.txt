@@ -1,1 +1,1 @@
-Compare a camera export with its backup before clearing phone space.
+Check which camera-export files reached your backup before clearing phone space.

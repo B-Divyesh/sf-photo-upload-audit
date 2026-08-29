@@ -67,7 +67,7 @@ test('@claim:demo-sandbox opens a finished sample audit without writing real bro
   });
   await page.goto('/?release-preview=1');
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Find every gap in a photo backup' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Find gaps in a photo backup' })).toBeVisible();
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await expect(page.getByText('2 source files need attention')).toBeVisible();
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
@@ -98,7 +98,7 @@ test('@claim:demo-to-real discards the receipt before real folder selection', as
   await page.getByRole('link', { name: 'Start for real' }).click();
   await expect(page).toHaveURL(/\/audit$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Compare two photo folders' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Compare every file' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Create audit receipt' })).toBeDisabled();
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save receipt' })).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('audit:receipts'))).toBe('[]');
@@ -121,12 +121,12 @@ test('@claim:local-only sends no file data off origin', async ({ page }) => {
   await page.goto('/audit');
   await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await page.getByRole('button', { name: 'Export CSV' }).click();
   expect(offOrigin).toEqual([]);
 });
 
-test('@claim:hash-compare matches content when names and timestamps differ', async ({ page }) => {
+test('@claim:hash-compare verifies the SHA-256 abc vector and marks unequal same-name files changed', async ({ page }) => {
   await page.goto('/audit');
   const selectFiles = async (selector: string, files: Array<{ name: string; body: string; type: string; modified: number }>) => {
     await page.locator(selector).evaluate((input, selected) => {
@@ -138,14 +138,26 @@ test('@claim:hash-compare matches content when names and timestamps differ', asy
     }, files);
   };
   await selectFiles('#source-folder', [
-    { name: 'phone-original.jpg', body: 'same bytes', type: 'image/jpeg', modified: 1_700_000_000_000 },
+    { name: 'phone-original.jpg', body: 'abc', type: 'image/jpeg', modified: 1_700_000_000_000 },
+    { name: 'changed.jpg', body: 'camera bytes', type: 'image/jpeg', modified: 1_700_000_000_000 },
   ]);
   await selectFiles('#destination-folder', [
-    { name: 'renamed-backup.jpg', body: 'same bytes', type: 'image/jpeg', modified: 1_800_000_000_000 },
+    { name: 'renamed-backup.jpg', body: 'abc', type: 'image/jpeg', modified: 1_800_000_000_000 },
+    { name: 'changed.jpg', body: 'backup bytes', type: 'image/jpeg', modified: 1_800_000_000_000 },
   ]);
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('cell', { name: 'SHA-256 match' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Same name, different SHA-256' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  const csv = Buffer.concat(chunks).toString('utf8');
+  expect(csv).toContain('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  expect(csv).toContain('changed.jpg');
 });
 
 test('@claim:all-files-reported lists unsupported source files and prevents an all-clear', async ({ page }) => {
@@ -168,9 +180,9 @@ test('@claim:all-files-reported lists unsupported source files and prevents an a
     { name: 'backup-copy.jpg', body: 'matched-jpg', type: 'image/jpeg' },
     { name: 'backup-copy.tif', body: 'matched-tiff', type: 'image/tiff' },
   ]);
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
-  await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
+  await expect(page.getByText('No source files need attention')).toHaveCount(0);
   await expect(page.locator('.filename', { hasText: 'IMG_0003.psd' })).toBeVisible();
   await expect(page.getByText('This file type is not checked by this version (.psd).')).toBeVisible();
   await expect(page.getByRole('button', { name: 'skipped 1' })).toBeVisible();
@@ -194,7 +206,7 @@ test('@claim:audit-supported-media describes and shows the supported-media audit
     { name: 'IMG_0002.psd', body: 'unchecked', type: 'image/vnd.adobe.photoshop' },
   ]);
   await selectFiles('#destination-folder', [{ name: 'backup-copy.jpg', body: 'matched-jpg', type: 'image/jpeg' }]);
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('button', { name: 'skipped 1' })).toBeVisible();
   await expect(page.locator('.filename', { hasText: 'IMG_0002.psd' })).toBeVisible();
 });
@@ -224,7 +236,7 @@ test('@claim:no-account core audit is available without a license', async ({ pag
   await page.goto('/audit');
   await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export CSV' }).click();
@@ -236,7 +248,7 @@ test('@claim:read-only scan leaves selected file inputs intact', async ({ page }
   await page.goto('/audit');
   await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   await expect(page.getByText('original.jpg', { exact: true })).toBeVisible();
 });
@@ -253,7 +265,7 @@ test('@claim:offline-reload demo works after the connection drops', async ({ pag
   await page.waitForTimeout(250);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1, name: 'Find every gap in a photo backup' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Find gaps in a photo backup' })).toBeVisible();
   await expect(page.getByText('IMG_1844.MOV', { exact: true })).toBeVisible();
 });
 
@@ -271,24 +283,23 @@ test('@claim:license-private verification sends only the license token', async (
   expect(requestBody).toBeNull();
 });
 
-test('@claim:archive-license saves receipts and prints certificates', async ({ page }) => {
+test('@claim:archive-license saves receipts and prints certificates with a valid license', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sb_license:photo-upload-audit', 'cached-test-token');
     localStorage.setItem('sb_license_verdict:photo-upload-audit', JSON.stringify({ valid: true, checkedAt: Date.now() }));
   });
   await installVerifiedFixturePickers(page);
   await page.goto('/');
-  await expect(page.getByText('$19', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Buy Archive License/ })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout');
   await page.goto('/audit');
   await selectVerifiedFixtureFolders(page);
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await page.getByRole('button', { name: 'Save receipt' }).click();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('audit:receipts') || '[]').length)).toBe(1);
   await page.getByRole('link', { name: 'History', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Review saved audit receipts' })).toBeVisible();
   await page.getByRole('button', { name: 'Open receipt' }).click();
-  await expect(page.getByText('Every source file is accounted for')).toBeVisible();
+  await expect(page.getByText('No source files need attention')).toBeVisible();
   await page.evaluate(() => { window.print = () => localStorage.setItem('test:printed', 'yes'); });
   await page.getByRole('button', { name: 'Print certificate' }).click();
   expect(await page.evaluate(() => localStorage.getItem('test:printed'))).toBe('yes');
@@ -302,7 +313,7 @@ test('@claim:receipt-metadata-only saves receipt metadata without original media
   await installVerifiedFixturePickers(page);
   await page.goto('/audit');
   await selectVerifiedFixtureFolders(page);
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await page.getByRole('button', { name: 'Save receipt' }).click();
   const stored = await page.evaluate(() => {
     const raw = localStorage.getItem('audit:receipts') || '[]';
@@ -491,26 +502,36 @@ test('@claim:receipt-limit keeps at most 25 local receipts and explains the limi
   await installVerifiedFixturePickers(page);
   await page.goto('/audit');
   await selectVerifiedFixtureFolders(page);
-  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await page.getByRole('button', { name: 'Create audit receipt' }).click();
   await page.getByRole('button', { name: 'Save receipt' }).click();
   await expect(page.getByText('Your 25 saved receipt limit is full. Remove a saved receipt before adding another.')).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('audit:receipts') || '[]').length)).toBe(25);
 });
 
-test('@claim:checkout-health sends buyers to a live hosted checkout', async ({ request }) => {
-  test.setTimeout(45_000);
+test('@claim:checkout-health verifies the live checkout product, $19.00 total, and one-time mode', async ({ request }) => {
+  test.setTimeout(60_000);
   let response: Awaited<ReturnType<typeof request.get>> | undefined;
+  let checkout: Awaited<ReturnType<typeof request.get>> | undefined;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const candidate = await request.get('https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout', { maxRedirects: 0, timeout: 12_000 });
-      if (candidate.status() === 303) { response = candidate; break; }
+      if (candidate.status() !== 303) continue;
+      const location = candidate.headers().location;
+      if (!/^https:\/\/checkout\.dodopayments\.com\//.test(location)) continue;
+      const hosted = await request.get(location, { maxRedirects: 0, timeout: 20_000 });
+      if (hosted.ok()) { response = candidate; checkout = hosted; break; }
     } catch {
       // The hosted checkout can have a short cold-start delay. Retry the same
-      // observable public endpoint rather than replacing this live check.
+      // public buyer path rather than replacing this live check.
     }
     await new Promise((resolve) => setTimeout(resolve, 400));
   }
   expect(response, 'The hosted checkout should answer within three attempts.').toBeTruthy();
+  expect(checkout, 'The hosted checkout document should load within three attempts.').toBeTruthy();
   expect(response!.status()).toBe(303);
   expect(response!.headers().location).toMatch(/^https:\/\/checkout\.dodopayments\.com\//);
+  const text = (await checkout!.text()).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  expect(text).toContain('Photo Upload Audit');
+  expect(text).toContain('Total $19.00');
+  expect(text).toContain('One-time unlock for Photo Upload Audit');
 });

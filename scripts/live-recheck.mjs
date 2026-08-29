@@ -1,11 +1,14 @@
 import { chromium } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const origin = (process.argv[2] || 'https://photo-upload-audit.sociobot.in').replace(/\/$/, '');
-const evidenceDir = path.resolve(process.argv[3] || '.factory/evidence/polish-8-live');
+const evidenceDir = path.resolve(process.argv[3] || '.factory/evidence/polish-9-live');
 await mkdir(evidenceDir, { recursive: true });
+const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+const currentVersion = packageJson.version;
+const currentBuild = JSON.parse(await readFile('dist/site/build.json', 'utf8')).build_id;
 
 const expected = [
   ['/', 'Photo Upload Audit — Check photo backups', 'home'],
@@ -95,7 +98,7 @@ for (const [route, expectedTitle, screenshotName] of expected) {
   await page.getByRole('link', { name: 'Start for real' }).click();
   assert(new URL(page.url()).pathname === '/audit', 'Start for real did not open /audit');
   assert(await page.getByText('IMG_1844.MOV', { exact: true }).count() === 0, 'Sample row remained after demo');
-  assert(await page.getByRole('button', { name: 'Compare every file' }).isDisabled(), 'Real audit did not start empty');
+  assert(await page.getByRole('button', { name: 'Create audit receipt' }).isDisabled(), 'Real audit did not start empty');
   await page.screenshot({ path: path.join(evidenceDir, 'demo-to-real-390.png'), fullPage: true });
   report.demo = { initialRows: 8, missingRows: 1, resetRows: 8, storage, requests, finalUrl: page.url(), sampleRowsAfterExit: 0 };
   await context.close();
@@ -123,7 +126,7 @@ for (const [route, expectedTitle, screenshotName] of expected) {
   assert(!text.includes('Inside the app') && !text.includes('Clear boundaries'), 'Old section labels remain');
   const releaseText = await page.locator('[data-downloads]').innerText();
   const footer = await page.locator('.build').innerText();
-  assert(releaseText.includes('v0.1.5') && footer.includes('v0.1.5') && footer.includes('1c7b93b45924'), 'Release identity is stale');
+  assert(releaseText.includes(`v${currentVersion}`) && footer.includes(`v${currentVersion}`) && footer.includes(currentBuild.slice(0, 12)), 'Release identity is stale');
   const firstScreen = await page.locator('h1, .lede, .hero-action, .plain-facts').evaluateAll((elements) => elements.map((element) => {
     const box = element.getBoundingClientRect();
     return { text: element.textContent?.trim(), top: box.top, bottom: box.bottom };

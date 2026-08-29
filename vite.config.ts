@@ -11,8 +11,6 @@ function gitOutput(args: string[]): string | undefined {
 }
 
 function releaseBuildId(): string {
-  const supplied = process.env.GITHUB_SHA || process.env.BUILD_ID;
-  if (supplied) return supplied.trim();
   const tag = `v${packageJson.version}`;
   const localTag = gitOutput(['rev-list', '-n', '1', tag]);
   if (localTag) return localTag;
@@ -22,7 +20,9 @@ function releaseBuildId(): string {
   const peeled = remoteLines.find((line) => line.endsWith(`refs/tags/${tag}^{}`));
   const direct = remoteLines.find((line) => line.endsWith(`refs/tags/${tag}`));
   const remoteCommit = (peeled || direct)?.split(/\s+/)[0];
-  return remoteCommit || gitOutput(['rev-parse', 'HEAD']) || 'unknown';
+  if (remoteCommit) return remoteCommit;
+  const supplied = process.env.GITHUB_SHA || process.env.BUILD_ID;
+  return supplied?.trim() || gitOutput(['rev-parse', 'HEAD']) || 'unknown';
 }
 
 const buildId = releaseBuildId();

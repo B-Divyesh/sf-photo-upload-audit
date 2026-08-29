@@ -86,7 +86,7 @@ function home(): string {
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Compare a camera export with its backup</p>
-        <h1>Check every photo before clearing space</h1>
+        <h1>Check which photos reached your backup</h1>
         <p class="lede">For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space.</p>
         <div class="hero-action">
           <a class="button primary" href="/demo" data-nav>Try it with sample data</a>
@@ -107,7 +107,7 @@ function home(): string {
       </div>
     </section>
     <section class="preview section-grid" aria-labelledby="preview-title">
-      <div class="section-intro"><p class="eyebrow">The receipt</p><h2 id="preview-title">See which files match or need attention</h2><p>The app compares each file’s contents, even when its name changed.</p><a class="arrow-link" href="/audit" data-nav>Audit your folders <span aria-hidden="true">→</span></a></div>
+      <div class="section-intro"><p class="eyebrow">The receipt</p><h2 id="preview-title">See which files match or need attention</h2><p>The app compares each supported file’s contents, even when its name changed.</p><a class="arrow-link" href="/audit" data-nav>Audit your folders <span aria-hidden="true">→</span></a></div>
       ${miniReceipt()}
     </section>
     <section class="how section-grid" aria-labelledby="how-title">
@@ -161,7 +161,7 @@ function paidSection(): string {
 }
 
 function auditPage(): string {
-  const title = state.demo ? 'Find every gap in a photo backup' : 'Compare two photo folders';
+  const title = state.demo ? 'Find gaps in a photo backup' : 'Compare two photo folders';
   const intro = state.demo ? 'This sample includes one missing file, one changed file, a duplicate, and a complete Live Photo.' : 'Choose a camera export and its backup. The receipt lists every selected file and marks types it cannot check as skipped.';
   return `<section class="workbench-page">
     <div class="workbench-heading"><p class="eyebrow">${state.demo ? 'Sample audit' : 'New audit'}</p><h1>${title}</h1><p>${intro}</p></div>
@@ -178,7 +178,7 @@ function pickerView(): string {
       ${folderPicker('destination', '2 · Backup folder', state.destination)}
     </div>
     ${state.error ? `<div class="error-message" role="alert"><strong>The audit did not start.</strong><span>${escapeHtml(state.error)}</span></div>` : ''}
-    ${state.busy && progress ? `<div class="scan-progress" role="status" aria-live="polite"><div><span>${progress.stage === 'compare' ? 'Comparing files' : `Hashing ${progress.stage}`}</span><strong>${progress.current} / ${progress.total}</strong></div><progress max="${Math.max(progress.total, 1)}" value="${progress.current}"></progress><p>${escapeHtml(progress.fileName || 'Building the receipt…')}</p><i class="scan-beam" aria-hidden="true"></i></div>` : `<div class="scan-action"><button class="button primary" data-action="scan" ${state.source.length && state.destination.length ? '' : 'disabled'}>Compare every file</button><span>Read-only. Large folders can take time.</span></div>`}
+    ${state.busy && progress ? `<div class="scan-progress" role="status" aria-live="polite"><div><span>${progress.stage === 'compare' ? 'Comparing files' : `Hashing ${progress.stage}`}</span><strong>${progress.current} / ${progress.total}</strong></div><progress max="${Math.max(progress.total, 1)}" value="${progress.current}"></progress><p>${escapeHtml(progress.fileName || 'Building the receipt…')}</p><i class="scan-beam" aria-hidden="true"></i></div>` : `<div class="scan-action"><button class="button primary" data-action="scan" ${state.source.length && state.destination.length ? '' : 'disabled'}>Create audit receipt</button><span>Read-only. Large folders can take time.</span></div>`}
   </section>`;
 }
 
@@ -205,7 +205,7 @@ function resultView(): string {
   const resultHeading = identityUnverified
     ? 'Folder identity could not be verified'
     : sourceIssues === 0
-      ? 'Every source file is accounted for'
+      ? 'No source files need attention'
       : `${sourceIssues} source file${sourceIssues === 1 ? '' : 's'} need${sourceIssues === 1 ? 's' : ''} attention`;
   const identityNotice = identityUnverified
     ? `<p class="identity-warning" role="alert"><strong>This receipt cannot confirm your backup.</strong> Choose both folders with a verified folder picker to confirm they are different folders.</p>`

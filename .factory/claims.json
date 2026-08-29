@@ -29,10 +29,10 @@
   },
   {
     "id": "hash-compare",
-    "claim": "Matches files by SHA-256 content, even when a backup name or timestamp differs",
+    "claim": "Matches supported media by SHA-256 content, even when a backup name or timestamp differs",
     "where": "landing receipt copy, audit page, README",
     "test": "npm test -- --grep @claim:hash-compare",
-    "sandbox": "fresh browser context; select generated source and destination files with equal bytes, different names, and deliberately different lastModified values"
+    "sandbox": "fresh browser context; export a receipt for the standard abc digest with a renamed equal-byte backup, then assert unequal same-name media is changed"
   },
   {
     "id": "all-files-reported",
@@ -92,7 +92,7 @@
   },
   {
     "id": "archive-license",
-    "claim": "The $19 one-time Archive License saves local receipts and prints certificates",
+    "claim": "A valid Archive License saves local receipts and prints certificates",
     "where": "landing paid section, terms page, README",
     "test": "npm test -- --grep @claim:archive-license",
     "sandbox": "fresh browser context with a cached valid test verdict; complete a fixture audit, save it, and invoke print"
@@ -155,7 +155,7 @@
   },
   {
     "id": "unsigned-installers",
-    "claim": "Desktop installers for v0.1.5 are unsigned",
+    "claim": "Desktop installers for v0.1.6 are unsigned",
     "where": "landing desktop section, release workflow",
     "test": "npm test -- --grep @claim:unsigned-installers",
     "sandbox": "fresh browser context; inspect the versioned installer status"
@@ -169,10 +169,10 @@
   },
   {
     "id": "checkout-health",
-    "claim": "The Archive License checkout opens with Sociobot/Dodo payment processing",
-    "where": "paid tier, terms page",
+    "claim": "The Archive License checkout shows Photo Upload Audit at $19.00 as a one-time unlock",
+    "where": "paid tier, terms page, README",
     "test": "npm test -- --grep @claim:checkout-health",
-    "sandbox": "test request to the public checkout endpoint; assert its hosted-checkout redirect"
+    "sandbox": "public checkout request; follow the hosted Dodo checkout and assert product name, Total $19.00, and one-time unlock text"
   },
   {
     "id": "same-folder-safe",
