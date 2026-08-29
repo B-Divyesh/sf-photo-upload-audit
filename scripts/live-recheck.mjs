@@ -118,7 +118,7 @@ for (const [route, expectedTitle, screenshotName] of expected) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   await page.goto(`${origin}/`, { waitUntil: 'networkidle', timeout: 60_000 });
-  const text = await page.locator('body').innerText();
+  const text = await page.locator('body').textContent();
   assert(text.includes('Folder comparison walkthrough') && text.includes('Privacy and backup limits'), 'New section labels are missing');
   assert(!text.includes('Inside the app') && !text.includes('Clear boundaries'), 'Old section labels remain');
   const releaseText = await page.locator('[data-downloads]').innerText();
