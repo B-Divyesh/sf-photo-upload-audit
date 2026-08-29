@@ -119,7 +119,7 @@ function home(): string {
       </ol>
     </section>
     <section class="walkthrough" aria-labelledby="walkthrough-title">
-      <div class="section-intro"><p class="eyebrow">Inside the app</p><h2 id="walkthrough-title">Compare two folders in three steps</h2></div>
+      <div class="section-intro"><p class="eyebrow">Folder comparison walkthrough</p><h2 id="walkthrough-title">Compare two folders in three steps</h2></div>
       <div class="frames">
         ${walkFrame('1', 'Pick both folders', 'Source is always first.', '<span class="folder-glyph">EXPORT</span><span class="flow-line"></span><span class="folder-glyph destination">BACKUP</span>')}
         ${walkFrame('2', 'Follow the file check', 'The current file and count stay visible.', '<span class="frame-count">4,812 / 9,204</span><span class="frame-bar"><i></i></span>')}
@@ -128,7 +128,7 @@ function home(): string {
     </section>
     ${downloadsSection()}
     <section class="boundaries section-grid" aria-labelledby="privacy-title">
-      <div class="section-intro"><p class="eyebrow">Clear boundaries</p><h2 id="privacy-title">Your photo data stays on your device</h2></div>
+      <div class="section-intro"><p class="eyebrow">Privacy and backup limits</p><h2 id="privacy-title">Your photo data stays on your device</h2></div>
       <div class="boundary-copy"><p>The app reads the folders you choose. It never moves, edits, or deletes media.</p><p>No photo index or filename is sent to us. License checks send only the license token.</p><p>It checks two folders. Keep your existing backup and complete a restore test.</p></div>
     </section>
     ${paidSection()}`;

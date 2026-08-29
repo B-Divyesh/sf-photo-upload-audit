@@ -16,7 +16,8 @@ function releaseSourceCommit(): string {
     return execFileSync('git', ['rev-list', '-n', '1', tag], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
     const lines = execFileSync('git', ['ls-remote', 'origin', `refs/tags/${tag}`, `refs/tags/${tag}^{}`], { encoding: 'utf8' }).trim().split(/\r?\n/);
-    return (lines.find((line) => line.endsWith(`refs/tags/${tag}^{}`)) || lines.find((line) => line.endsWith(`refs/tags/${tag}`)))!.split(/\s+/)[0];
+    const remoteTag = lines.find((line) => line.endsWith(`refs/tags/${tag}^{}`)) || lines.find((line) => line.endsWith(`refs/tags/${tag}`));
+    return remoteTag?.split(/\s+/)[0] || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   }
 }
 const currentSourceCommit = releaseSourceCommit();
@@ -62,7 +63,7 @@ test('@claim:demo-sandbox opens a finished sample audit without writing real bro
   });
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 350));
-    await route.fulfill({ json: { tag_name: 'v0.1.4', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4', assets: [] } });
+    await route.fulfill({ json: { tag_name: `v${currentVersion}`, target_commitish: currentSourceCommit, html_url: `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v${currentVersion}`, assets: [] } });
   });
   await page.goto('/?release-preview=1');
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
@@ -76,7 +77,8 @@ test('@claim:demo-sandbox opens a finished sample audit without writing real bro
 });
 
 test('@claim:demo-reset restores the full sample receipt and All filter', async ({ page }) => {
-  await page.goto('/demo');
+  await page.goto('/?demo=1');
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await page.getByRole('button', { name: 'missing 1' }).click();
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await page.getByRole('button', { name: 'Reset demo' }).click();
@@ -383,21 +385,21 @@ test('@claim:no-analytics makes no analytics or advertising requests', async ({ 
 
 test('@claim:desktop-downloads shows a usable detected-platform installer link', async ({ page }) => {
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', (route) => route.fulfill({ json: {
-    tag_name: 'v0.1.4', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4',
+    tag_name: `v${currentVersion}`, target_commitish: currentSourceCommit, html_url: `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v${currentVersion}`,
     assets: [
-      { name: 'photo-upload-audit_0.1.4_amd64.AppImage', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_amd64.AppImage' },
-      { name: 'photo-upload-audit_0.1.4_x64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_x64.dmg' },
-      { name: 'photo-upload-audit_0.1.4_aarch64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_aarch64.dmg' },
-      { name: 'photo-upload-audit_0.1.4_x64.msi', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_x64.msi' },
+      { name: `photo-upload-audit_${currentVersion}_amd64.AppImage`, browser_download_url: `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v${currentVersion}/photo-upload-audit_${currentVersion}_amd64.AppImage` },
+      { name: `photo-upload-audit_${currentVersion}_x64.dmg`, browser_download_url: `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v${currentVersion}/photo-upload-audit_${currentVersion}_x64.dmg` },
+      { name: `photo-upload-audit_${currentVersion}_aarch64.dmg`, browser_download_url: `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v${currentVersion}/photo-upload-audit_${currentVersion}_aarch64.dmg` },
+      { name: `photo-upload-audit_${currentVersion}_x64.msi`, browser_download_url: `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v${currentVersion}/photo-upload-audit_${currentVersion}_x64.msi` },
     ],
   } }));
   await page.goto('/?release-preview=1');
-  await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', /releases\/download\/v0\.1\.4\//);
+  await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', new RegExp(`releases/download/v${currentVersion.replaceAll('.', '\\.')}\/`));
 });
 
 test('download panel withholds a desktop release built from another source commit', async ({ page }) => {
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', (route) => route.fulfill({ json: {
-    tag_name: 'v0.1.4', target_commitish: '0'.repeat(40), html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4', assets: [],
+    tag_name: `v${currentVersion}`, target_commitish: '0'.repeat(40), html_url: `https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v${currentVersion}`, assets: [],
   } }));
   await page.goto('/?release-preview=1');
   await expect(page.getByText('Desktop downloads are being published.')).toBeVisible();

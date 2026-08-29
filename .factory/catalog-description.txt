@@ -1,1 +1,1 @@
-Compare photo backups before clearing phone space.
+Compare a camera export with its backup before clearing phone space.

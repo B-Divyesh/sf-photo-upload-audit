@@ -155,7 +155,7 @@
   },
   {
     "id": "unsigned-installers",
-    "claim": "Desktop installers for v0.1.2 are unsigned",
+    "claim": "Desktop installers for v0.1.5 are unsigned",
     "where": "landing desktop section, release workflow",
     "test": "npm test -- --grep @claim:unsigned-installers",
     "sandbox": "fresh browser context; inspect the versioned installer status"

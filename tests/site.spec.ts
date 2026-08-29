@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: undefined }));
 });
 
-for (const route of ['/', '/demo', '/audit', '/privacy', '/terms', '/does-not-exist']) {
+for (const route of ['/', '/demo', '/audit', '/history', '/privacy', '/terms', '/does-not-exist']) {
   test(`route ${route} has one h1 and no serious accessibility violations`, async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
@@ -18,12 +18,35 @@ for (const route of ['/', '/demo', '/audit', '/privacy', '/terms', '/does-not-ex
     await expect(page.locator('main')).toHaveCount(1);
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page).toHaveTitle(/Photo Upload Audit/);
+    await expect(page.getByRole('link', { name: 'Privacy', exact: true }).last()).toHaveAttribute('href', '/privacy');
+    await expect(page.getByRole('link', { name: 'Terms', exact: true })).toHaveAttribute('href', '/terms');
     const results = await new AxeBuilder({ page: page as never }).analyze();
     const serious = results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''));
     expect(serious).toEqual([]);
     expect(errors).toEqual([]);
   });
 }
+
+test('first screen states the job, audience, sample action, outcome, and three facts', async ({ page }) => {
+  for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    const firstScreen = [
+      page.getByRole('heading', { level: 1, name: 'Check every photo before clearing space' }),
+      page.getByText('For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space.'),
+      page.getByRole('link', { name: 'Try it with sample data' }),
+      page.getByText('See a finished audit in one click.'),
+      page.getByText('Files stay on this device'),
+      page.getByText('Works without an account'),
+      page.getByText('Core audit and CSV are free'),
+    ];
+    for (const item of firstScreen) {
+      await expect(item).toBeVisible();
+      const box = await item.boundingBox();
+      expect(box && box.y >= 0 && box.y + box.height <= viewport.height).toBe(true);
+    }
+  }
+});
 
 test('mobile demo fits a 390px viewport and remains operable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -206,25 +229,33 @@ test('@claim:source-first keeps source before backup on desktop and mobile', asy
 });
 
 test('pre-rendered routes publish route-specific metadata and a real 404 configuration', async () => {
-  const expectations: Record<string, { title: string; description?: string }> = {
-    'demo.html': { title: 'Demo — Photo Upload Audit' },
-    'audit.html': { title: 'Audit folders — Photo Upload Audit', description: 'Choose two local folders. Supported media is compared by SHA-256, and unchecked files stay visible.' },
-    'privacy.html': { title: 'Privacy — Photo Upload Audit' },
-    'terms.html': { title: 'Terms — Photo Upload Audit' },
-    '404.html': { title: 'Page not found — Photo Upload Audit' },
+  const expectations: Record<string, { route: string; title: string; description: string }> = {
+    'index.html': { route: '/', title: 'Photo Upload Audit — Check photo backups', description: 'Check a camera export against a backup folder. Find missing, changed, skipped, duplicate, and unpaired Live Photo files.' },
+    'demo.html': { route: '/demo', title: 'Demo — Photo Upload Audit', description: 'Try a complete photo backup audit with sample files.' },
+    'audit.html': { route: '/audit', title: 'Audit folders — Photo Upload Audit', description: 'Choose two local folders. Supported media is compared by SHA-256, and unchecked files stay visible.' },
+    'history.html': { route: '/history', title: 'Saved receipts — Photo Upload Audit', description: 'Review saved local photo backup audit receipts.' },
+    'privacy.html': { route: '/privacy', title: 'Privacy — Photo Upload Audit', description: 'How Photo Upload Audit handles files and license data.' },
+    'terms.html': { route: '/terms', title: 'Terms — Photo Upload Audit', description: 'Terms for using Photo Upload Audit.' },
+    '404.html': { route: '/404', title: 'Page not found — Photo Upload Audit', description: 'This page could not be found.' },
   };
   for (const [file, expectation] of Object.entries(expectations)) {
     const html = await readFile(`dist/site/${file}`, 'utf8');
     expect(html).toContain(`<title>${expectation.title}</title>`);
+    expect(html).toContain(`name="description" content="${expectation.description}"`);
+    expect(html).toContain(`rel="canonical" href="https://photo-upload-audit.sociobot.in${expectation.route}"`);
     expect(html).toContain(`property="og:title" content="${expectation.title}"`);
+    expect(html).toContain(`property="og:description" content="${expectation.description}"`);
     expect(html).toContain(`name="twitter:title" content="${expectation.title}"`);
-    if (expectation.description) {
-      expect(html).toContain(`name="description" content="${expectation.description}"`);
-      expect(html).toContain(`property="og:description" content="${expectation.description}"`);
-      expect(html).toContain(`name="twitter:description" content="${expectation.description}"`);
-    }
+    expect(html).toContain(`name="twitter:description" content="${expectation.description}"`);
   }
-  const config = JSON.parse(await readFile('dist/site/staticwebapp.config.json', 'utf8')) as { responseOverrides: { '404': { rewrite: string; statusCode: number } } };
+  const config = JSON.parse(await readFile('dist/site/staticwebapp.config.json', 'utf8')) as { routes: Array<{ route: string; rewrite: string }>; responseOverrides: { '404': { rewrite: string; statusCode: number } } };
+  expect(config.routes.filter(({ route }) => ['/demo', '/audit', '/history', '/privacy', '/terms'].includes(route))).toEqual([
+    { route: '/demo', rewrite: '/demo.html' },
+    { route: '/audit', rewrite: '/audit.html' },
+    { route: '/history', rewrite: '/history.html' },
+    { route: '/privacy', rewrite: '/privacy.html' },
+    { route: '/terms', rewrite: '/terms.html' },
+  ]);
   expect(config.responseOverrides['404']).toEqual({ rewrite: '/404.html', statusCode: 404 });
 });
 
@@ -303,6 +334,29 @@ test('landing uses plain preview labels and identifies the external checkout', a
   await expect(page.getByText('SHA-256 match', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Same name, different hash', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Install it where your archive lives', { exact: true })).toHaveCount(0);
+});
+
+test('landing section labels name their product-specific content', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Folder comparison walkthrough', { exact: true })).toBeVisible();
+  await expect(page.getByText('Privacy and backup limits', { exact: true })).toBeVisible();
+  await expect(page.getByText('Inside the app', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Clear boundaries', { exact: true })).toHaveCount(0);
+});
+
+test('claims manifest has one current test for every declared claim', async () => {
+  const claims = JSON.parse(await readFile('.factory/claims.json', 'utf8')) as Array<{ id: string; claim: string; test: string }>;
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { version: string };
+  const testSources = `${await readFile('tests/claims.spec.ts', 'utf8')}\n${await readFile('tests/site.spec.ts', 'utf8')}`;
+  const ids = claims.map(({ id }) => id);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const claim of claims) {
+    expect(claim.test).toBe(`npm test -- --grep @claim:${claim.id}`);
+    expect(testSources.match(new RegExp(`@claim:${claim.id}(?![a-z0-9-])`, 'g'))).toHaveLength(1);
+  }
+  const declaredTags = [...testSources.matchAll(/@claim:([a-z0-9-]+)/g)].map((match) => match[1]);
+  expect(new Set(declaredTags)).toEqual(new Set(ids));
+  expect(claims.find(({ id }) => id === 'unsigned-installers')?.claim).toBe(`Desktop installers for v${packageJson.version} are unsigned`);
 });
 
 test('terms advise safe deletion without claiming to replace a backup, and public copy stays plain', async ({ page }) => {
