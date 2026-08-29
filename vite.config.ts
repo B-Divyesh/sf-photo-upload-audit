@@ -2,7 +2,19 @@ import { defineConfig } from 'vite';
 import packageJson from './package.json';
 import { execFileSync } from 'node:child_process';
 
-const buildId = (process.env.GITHUB_SHA || process.env.BUILD_ID || execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' })).trim();
+function releaseBuildId(): string {
+  const supplied = process.env.GITHUB_SHA || process.env.BUILD_ID;
+  if (supplied) return supplied.trim();
+  try {
+    // Keep a documentation-only commit after a release from making the site
+    // hide the installer that has the same published application version.
+    return execFileSync('git', ['rev-list', '-n', '1', `v${packageJson.version}`], { encoding: 'utf8' }).trim();
+  } catch {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  }
+}
+
+const buildId = releaseBuildId();
 
 export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(packageJson.version), __BUILD_ID__: JSON.stringify(buildId) },

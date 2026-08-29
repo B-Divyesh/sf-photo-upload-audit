@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { execFile, execFileSync } from 'node:child_process';
@@ -8,7 +9,8 @@ import { promisify } from 'node:util';
 
 const fixture = (name: string) => path.resolve('tests/fixtures', name);
 const execFileAsync = promisify(execFile);
-const currentSourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const currentVersion = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }).version;
+const currentSourceCommit = execFileSync('git', ['rev-list', '-n', '1', `v${currentVersion}`], { encoding: 'utf8' }).trim();
 
 test.beforeEach(async ({ page }) => {
   // Most browser tests exercise the anonymous folder-input fallback. Individual

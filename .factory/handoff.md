@@ -4,6 +4,7 @@
 
 - Repaired the folder-identity regression. A verified picker rejects the same directory through `isSameEntry()`. The browser/Tauri directory-input fallback is deliberately non-certifying: it still produces a useful receipt, but it marks folder identity unverified, suppresses all-clear/certification actions, and explains how to obtain a verified comparison. CSV receipts disclose this field too.
 - Repaired desktop release identity. `v0.1.4` (`d8d5ac9dc4c84388611cf551fd42a4813b41764e`) embeds `build-provenance.json` in each Tauri bundle. The published `latest.json`, release target, package resource, site footer, and downloads all agree on that source commit. The landing withholds a release that does not match its own version and source build.
+- The site resolves its build identity from the matching version tag when no build ID is supplied. A later documentation-only commit therefore cannot hide a valid installer.
 - Preserved the existing product-specific visual system and all prior fixes: one-click isolated demo with reset/real exit, accessible routes and 404, legal pages, metadata, mobile geometry, local-only data, and plain-language copy.
 - Updated `.factory/claims.json` to 30 claims, including `desktop-build-identity`; updated the catalog description to `Compare photo backups before clearing phone space.`; updated copy audit, README release explanation, and `.factory/polish-7.md`.
 - Released through GitHub Actions and deployed the static site through the supplied work order.
