@@ -32,5 +32,5 @@ export async function makeSampleAudit(): Promise<AuditResult> {
     sample('d7', 'Archive/2026/IMG_1845.MOV', 5_012_913, 'd2'),
     sample('d8', 'Archive/2026/IMG_1844.HEIC', 2_922_105, 'c1'),
   ];
-  return compareLibraries(source, destination, { source: 'iPhone export · 14 Jul', destination: 'Family archive drive' });
+  return compareLibraries(source, destination, { source: 'iPhone export · 14 Jul', destination: 'Family archive drive', folderIdentity: 'demo' });
 }

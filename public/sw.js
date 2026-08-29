@@ -1,6 +1,6 @@
 // Keep the published desktop version in the cache name, then advance the
 // static repair generation so an already-installed browser updates its shell.
-const CACHE = 'photo-upload-audit-v0.1.2-r6';
+const CACHE = 'photo-upload-audit-v0.1.3-r7';
 const SHELL = ['/', '/demo', '/audit', '/privacy', '/terms', '/favicon.svg', '/manifest.webmanifest', '/art/verification-landscape-960.webp'];
 
 self.addEventListener('install', (event) => {

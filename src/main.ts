@@ -21,6 +21,7 @@ const state: {
 type DirectoryEntry = DirectoryHandle | { kind: 'file'; getFile(): Promise<File> };
 type DirectoryHandle = { name: string; kind: 'directory'; entries(): AsyncIterableIterator<[string, DirectoryEntry]>; isSameEntry(other: DirectoryHandle): Promise<boolean> };
 const directoryHandles: Partial<Record<'source' | 'destination', DirectoryHandle>> = {};
+const folderIdentity: Partial<Record<'source' | 'destination', 'verified' | 'unverified'>> = {};
 let downloadRequest: AbortController | undefined;
 let releaseMemoryCache: { at: number; data: Release } | undefined;
 
@@ -75,7 +76,7 @@ function shell(content: string, path: string): string {
     <footer>
       <div><a class="wordmark footer-mark" href="/" data-nav>${icon}<span>Photo Upload Audit</span></a><p>Check your backup before clearing your phone.</p></div>
       <nav aria-label="Footer navigation"><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a><a href="https://sociobot.in" rel="external">Built by Param Factory <span class="sr-only">(external site)</span></a></nav>
-      <p class="build">v${__APP_VERSION__} · desktop app · files stay on your device</p>
+      <p class="build" data-build-id="${__BUILD_ID__}">v${__APP_VERSION__} · build ${__BUILD_ID__.slice(0, 12)} · desktop app · files stay on your device</p>
     </footer>
     <div class="route-announcer sr-only" aria-live="polite"></div>`;
 }
@@ -186,8 +187,11 @@ function folderPicker(kind: 'source' | 'destination', label: string, files: Medi
   const skipped = files.length - checked;
   const description = files.length ? `${files.length.toLocaleString()} selected files: ${checked.toLocaleString()} ready${skipped ? `, ${skipped.toLocaleString()} will be listed as skipped` : ''}` : 'No folder chosen';
   const controlLabel = `Choose ${kind === 'source' ? 'export' : 'backup'} folder`;
-  const nativePicker = 'showDirectoryPicker' in window ? `<button class="button secondary" data-action="choose-folder" data-folder-kind="${kind}">${controlLabel}</button><p class="picker-note">Checks folder identity when your browser allows it.</p>` : '';
-  return `<div class="folder-picker ${files.length ? 'has-files' : ''}"><span class="folder-number">${label}</span><strong>${kind === 'source' ? 'What left the phone' : 'Where it should be'}</strong><p id="${kind}-folder-help">${description}</p>${nativePicker}<label class="folder-input-label" for="${kind}-folder">Or choose a folder from your device</label><input class="folder-input" id="${kind}-folder" type="file" webkitdirectory multiple data-folder="${kind}" aria-describedby="${kind}-folder-help" /></div>`;
+  const supportsVerifiedPicker = typeof (window as Window & { showDirectoryPicker?: unknown }).showDirectoryPicker === 'function';
+  const verifiedPicker = supportsVerifiedPicker
+    ? `<button class="button secondary" data-action="choose-folder" data-folder-kind="${kind}">${controlLabel}</button><p class="picker-note">This picker checks folder identity before an all-clear.</p><input id="${kind}-folder" type="file" webkitdirectory multiple data-folder="${kind}" hidden tabindex="-1" aria-hidden="true" />`
+    : `<label class="folder-input-label" for="${kind}-folder">Choose files from a folder on your device</label><input class="folder-input" id="${kind}-folder" type="file" webkitdirectory multiple data-folder="${kind}" aria-describedby="${kind}-folder-help ${kind}-identity-note" /><p class="picker-note identity-note" id="${kind}-identity-note">Browser folder inputs cannot verify folder identity. Their receipts never issue an all-clear.</p>`;
+  return `<div class="folder-picker ${files.length ? 'has-files' : ''}"><span class="folder-number">${label}</span><strong>${kind === 'source' ? 'What left the phone' : 'Where it should be'}</strong><p id="${kind}-folder-help">${description}</p>${verifiedPicker}</div>`;
 }
 
 function resultView(): string {
@@ -195,9 +199,20 @@ function resultView(): string {
   const counts = summary(state.result);
   const shown = state.filter === 'all' ? state.result.rows : state.result.rows.filter((row) => row.status === state.filter);
   const sourceIssues = state.result.rows.filter((row) => Boolean(row.source) && ['missing', 'changed', 'skipped'].includes(row.status)).length;
+  // Receipts saved before this field existed cannot prove the directory
+  // relationship either. Treat missing provenance as unverified on reload.
+  const identityUnverified = state.result.folderIdentity !== 'verified' && state.result.folderIdentity !== 'demo';
+  const resultHeading = identityUnverified
+    ? 'Folder identity could not be verified'
+    : sourceIssues === 0
+      ? 'Every source file is accounted for'
+      : `${sourceIssues} source file${sourceIssues === 1 ? '' : 's'} need${sourceIssues === 1 ? 's' : ''} attention`;
+  const identityNotice = identityUnverified
+    ? `<p class="identity-warning" role="alert"><strong>This receipt cannot confirm your backup.</strong> Choose both folders with a verified folder picker to confirm they are different folders.</p>`
+    : '';
   const filters: Array<AuditStatus | 'all'> = ['all', 'missing', 'changed', 'skipped', 'duplicate', 'extra', 'verified'];
   return `<section class="results" aria-labelledby="receipt-title">
-    <div class="receipt-title"><div><p class="eyebrow">Audit receipt · ${new Date(state.result.createdAt).toLocaleDateString()}</p><h2 id="receipt-title">${sourceIssues === 0 ? 'Every source file is accounted for' : `${sourceIssues} source file${sourceIssues === 1 ? '' : 's'} need${sourceIssues === 1 ? 's' : ''} attention`}</h2>${state.receiptNote ? `<p class="receipt-note" role="status">${escapeHtml(state.receiptNote)}</p>` : ''}</div><div class="receipt-actions"><button class="button secondary" data-action="export-csv">Export CSV</button>${state.paid && !state.demo ? '<button class="button secondary" data-action="save-receipt">Save receipt</button><button class="button secondary" data-action="print">Print certificate</button>' : ''}${!state.demo ? '<button class="text-button" data-action="new-audit">Start another audit</button>' : ''}</div></div>
+    <div class="receipt-title"><div><p class="eyebrow">Audit receipt · ${new Date(state.result.createdAt).toLocaleDateString()}</p><h2 id="receipt-title">${resultHeading}</h2>${identityNotice}${state.receiptNote ? `<p class="receipt-note" role="status">${escapeHtml(state.receiptNote)}</p>` : ''}</div><div class="receipt-actions"><button class="button secondary" data-action="export-csv">Export CSV</button>${state.paid && !state.demo && !identityUnverified ? '<button class="button secondary" data-action="save-receipt">Save receipt</button><button class="button secondary" data-action="print">Print certificate</button>' : ''}${!state.demo ? '<button class="text-button" data-action="new-audit">Start another audit</button>' : ''}</div></div>
     <dl class="summary-strip"><div><dt>Source files</dt><dd>${state.result.sourceCount}</dd></div><div class="verified"><dt>Verified</dt><dd>${counts.verified}</dd></div><div class="missing"><dt>Missing</dt><dd>${counts.missing}</dd></div><div class="changed"><dt>Changed</dt><dd>${counts.changed}</dd></div><div class="skipped"><dt>Skipped</dt><dd>${counts.skipped}</dd></div><div class="duplicate"><dt>Duplicates</dt><dd>${counts.duplicate}</dd></div><div><dt>Unpaired</dt><dd>${counts.unpaired}</dd></div></dl>
     <div class="result-context"><span><strong>Source:</strong> ${escapeHtml(state.result.sourceLabel)}</span><span><strong>Backup:</strong> ${escapeHtml(state.result.destinationLabel)}</span></div>
     <div class="filters" aria-label="Filter results">${filters.map((filter) => `<button aria-pressed="${state.filter === filter}" data-filter="${filter}">${filter === 'all' ? `All ${state.result!.rows.length}` : `${filter} ${counts[filter as keyof typeof counts] ?? ''}`}</button>`).join('')}</div>
@@ -259,6 +274,7 @@ function bindEvents(): void {
   document.querySelectorAll<HTMLInputElement>('[data-folder]').forEach((input) => input.addEventListener('change', () => {
     const kind = input.dataset.folder as 'source' | 'destination';
     delete directoryHandles[kind];
+    folderIdentity[kind] = 'unverified';
     state[kind] = toMediaFiles(input.files ?? []);
     state.error = state[kind].length ? '' : 'That folder contains no files. Choose a folder that contains files.';
     void render();
@@ -266,7 +282,7 @@ function bindEvents(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-action="choose-folder"]').forEach((button) => button.addEventListener('click', () => void chooseDirectory(button.dataset.folderKind as 'source' | 'destination')));
   document.querySelector('[data-action="start-real"]')?.addEventListener('click', (event) => { event.preventDefault(); resetDemoState(); void nav('/audit'); });
   document.querySelector('[data-action="scan"]')?.addEventListener('click', () => void runScan());
-  document.querySelector('[data-action="new-audit"]')?.addEventListener('click', () => { state.result = undefined; state.source = []; state.destination = []; state.filter = 'all'; void render(); });
+  document.querySelector('[data-action="new-audit"]')?.addEventListener('click', () => { resetDemoState(); void render(); });
   document.querySelector('[data-action="reset-demo"]')?.addEventListener('click', async () => { state.filter = 'all'; state.result = await makeSampleAudit(); await render(); });
   document.querySelector('[data-action="export-csv"]')?.addEventListener('click', exportCsv);
   document.querySelector('[data-action="save-receipt"]')?.addEventListener('click', saveReceipt);
@@ -314,17 +330,26 @@ function bindEvents(): void {
 
 async function runScan(): Promise<void> {
   if (!state.source.length || !state.destination.length) { state.error = 'Choose both a camera export and backup folder, then compare again.'; await render(); return; }
-  if (directoryHandles.source && directoryHandles.destination && await directoryHandles.source.isSameEntry(directoryHandles.destination)) {
-    state.error = 'The source and backup folder are the same folder. Choose a different backup folder, then compare again.';
-    await render();
-    return;
+  const sourceHandle = directoryHandles.source;
+  const destinationHandle = directoryHandles.destination;
+  const verifiedFolders = folderIdentity.source === 'verified' && folderIdentity.destination === 'verified' && Boolean(sourceHandle && destinationHandle);
+  if (verifiedFolders && sourceHandle && destinationHandle) {
+    if (await sourceHandle.isSameEntry(destinationHandle)) {
+      state.error = 'The source and backup folder are the same folder. Choose a different backup folder, then compare again.';
+      await render();
+      return;
+    }
   }
   state.busy = true;
   state.error = '';
   state.progress = { stage: 'source', current: 0, total: state.source.length, fileName: '' };
   await render();
   try {
-    state.result = await compareLibraries(state.source, state.destination, { source: rootLabel(state.source), destination: rootLabel(state.destination) }, (progress) => {
+    state.result = await compareLibraries(state.source, state.destination, {
+      source: rootLabel(state.source),
+      destination: rootLabel(state.destination),
+      folderIdentity: verifiedFolders ? 'verified' : 'unverified',
+    }, (progress) => {
       state.progress = progress;
       updateProgress(progress);
     });
@@ -352,6 +377,8 @@ function resetDemoState(): void {
   state.receiptNote = '';
   delete directoryHandles.source;
   delete directoryHandles.destination;
+  delete folderIdentity.source;
+  delete folderIdentity.destination;
 }
 
 async function chooseDirectory(kind: 'source' | 'destination'): Promise<void> {
@@ -360,6 +387,7 @@ async function chooseDirectory(kind: 'source' | 'destination'): Promise<void> {
   try {
     const handle = await picker();
     directoryHandles[kind] = handle;
+    folderIdentity[kind] = 'verified';
     state[kind] = await filesFromDirectory(handle);
     state.error = state[kind].length ? '' : 'That folder contains no files. Choose a folder that contains files.';
     await render();
@@ -444,6 +472,7 @@ async function loadDownloads(): Promise<void> {
       releaseMemoryCache = { at: Date.now(), data: release };
     }
     if (controller.signal.aborted || currentPath() !== '/' || !panel.isConnected) return;
+    if (release.tag_name !== `v${__APP_VERSION__}` || release.target_commitish !== __BUILD_ID__) throw new Error('Release does not match this build');
     if (platform === 'macOS') {
       const arm = release.assets.find((item) => /aarch64.*\.dmg$/i.test(item.name));
       const intel = release.assets.find((item) => /x64.*\.dmg$/i.test(item.name));
@@ -463,7 +492,7 @@ async function loadDownloads(): Promise<void> {
   }
 }
 
-interface Release { tag_name: string; html_url: string; assets: Array<{ name: string; browser_download_url: string }> }
+interface Release { tag_name: string; target_commitish: string; html_url: string; assets: Array<{ name: string; browser_download_url: string }> }
 
 async function syncLicense(path: string): Promise<void> {
   if (path === '/demo') { state.paid = false; return; }

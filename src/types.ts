@@ -36,6 +36,11 @@ export interface AuditResult {
   destinationCount: number;
   rows: AuditRow[];
   durationMs: number;
+  /**
+   * A finished receipt is only an all-clear when the product could establish
+   * that the two selected directories are different directories.
+   */
+  folderIdentity: 'verified' | 'unverified' | 'demo';
 }
 
 export interface ScanProgress {

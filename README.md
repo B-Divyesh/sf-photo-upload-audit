@@ -2,7 +2,7 @@
 
 Verify every original, video, and Live Photo pair before clearing your phone.
 
-Photo Upload Audit is for iPhone and Android owners who copy camera exports to a disk or server. It compares a SHA-256 fingerprint of each file’s contents, so changed timestamps do not affect the result. The receipt separates verified, missing, changed, skipped, duplicate, extra, and unpaired files. It lists any selected file this version cannot check. When a browser provides folder identity, it refuses the same folder twice; it never guesses from a shared folder name. Each backup file is assigned to only one source original.
+Photo Upload Audit is for iPhone and Android owners who copy camera exports to a disk or server. It compares a SHA-256 fingerprint of each file’s contents, so changed timestamps do not affect the result. The receipt separates verified, missing, changed, skipped, duplicate, extra, and unpaired files. It lists any selected file this version cannot check. Browsers that verify folder identity reject the same folder and accept different folders with the same name. Browser folder inputs still scan. They never issue an all-clear because they cannot prove the folders differ. Each backup file is assigned to only one source original.
 
 The scanner is read-only. Media contents, names, hashes, and reports stay on your device. Core scanning and CSV export work without an account or license.
 
@@ -46,7 +46,7 @@ The desktop shell uses Tauri 2. Start it in development with:
 npm run tauri dev
 ```
 
-Tags matching `v*` run [the release workflow](.github/workflows/release.yml). Published releases include unsigned `.dmg`, `.msi` or `.exe`, `.AppImage`, and `.deb` installers. They also attach `SHA256SUMS` and `latest.json`; the release claims check the published formats, notice, and one checksum.
+Tags matching `v*` run [the release workflow](.github/workflows/release.yml). Published releases include unsigned `.dmg`, `.msi` or `.exe`, `.AppImage`, and `.deb` installers. They also attach `SHA256SUMS` and `latest.json`; that manifest names the release source commit. The release claims check the published formats, notice, checksum, and Debian package build identity.
 
 ## Archive License
 

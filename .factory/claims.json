@@ -176,10 +176,10 @@
   },
   {
     "id": "same-folder-safe",
-    "claim": "The app rejects the same folder and accepts different folders with the same name",
+    "claim": "The app rejects the same verified folder and never issues an all-clear when browser folder identity is unknown",
     "where": "README, audit error state",
     "test": "npm test -- --grep @claim:same-folder-safe",
-    "sandbox": "fresh browser context; use directory handles to select the same folder, then two distinct folders named DCIM"
+    "sandbox": "fresh browser context; use directory handles for one same-folder and two distinct DCIM folders, then exercise browser folder inputs for same and distinct selections"
   },
   {
     "id": "scan-progress",
@@ -201,5 +201,12 @@
     "where": "README",
     "test": "npm test -- --grep @claim:one-to-one-match",
     "sandbox": "fresh browser context; compare two identical source files against one identical backup file"
+  },
+  {
+    "id": "desktop-build-identity",
+    "claim": "The published desktop installer contains the source build named in its release manifest",
+    "where": "landing footer, README, latest.json",
+    "test": "npm test -- --grep @claim:desktop-build-identity",
+    "sandbox": "published latest GitHub release; extract its Debian package and compare embedded build.json with latest.json source_commit"
   }
 ]

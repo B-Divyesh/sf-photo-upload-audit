@@ -1,9 +1,43 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { execFile, execFileSync } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const fixture = (name: string) => path.resolve('tests/fixtures', name);
+const execFileAsync = promisify(execFile);
+const currentSourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+
+test.beforeEach(async ({ page }) => {
+  // Most browser tests exercise the anonymous folder-input fallback. Individual
+  // certificate tests install verified handles below.
+  await page.addInitScript(() => Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: undefined }));
+});
+
+async function installVerifiedFixturePickers(page: import('@playwright/test').Page): Promise<void> {
+  await page.addInitScript(() => {
+    const file = (name: string, body: string) => new File([body], name, { type: 'image/jpeg', lastModified: 1 });
+    const source = {
+      name: 'Camera export', kind: 'directory',
+      isSameEntry: async (other: unknown) => other === source,
+      entries: async function* () { yield ['original.jpg', { kind: 'file', getFile: async () => file('original.jpg', 'matched bytes') }]; },
+    };
+    const destination = {
+      name: 'Backup', kind: 'directory',
+      isSameEntry: async (other: unknown) => other === destination,
+      entries: async function* () { yield ['copy.jpg', { kind: 'file', getFile: async () => file('copy.jpg', 'matched bytes') }]; },
+    };
+    let calls = 0;
+    Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => (++calls === 1 ? source : destination) });
+  });
+}
+
+async function selectVerifiedFixtureFolders(page: import('@playwright/test').Page): Promise<void> {
+  await page.getByRole('button', { name: 'Choose export folder' }).click();
+  await page.getByRole('button', { name: 'Choose backup folder' }).click();
+}
 
 test('@claim:demo-sandbox opens a finished sample audit without writing real browser storage', async ({ page }) => {
   await page.addInitScript(() => {
@@ -17,7 +51,7 @@ test('@claim:demo-sandbox opens a finished sample audit without writing real bro
   });
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 350));
-    await route.fulfill({ json: { tag_name: 'v0.1.2', html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.2', assets: [] } });
+    await route.fulfill({ json: { tag_name: 'v0.1.3', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.3', assets: [] } });
   });
   await page.goto('/?release-preview=1');
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
@@ -98,7 +132,7 @@ test('@claim:hash-compare matches content when names and timestamps differ', asy
   ]);
   await page.getByRole('button', { name: 'Compare every file' }).click();
   await expect(page.getByRole('cell', { name: 'SHA-256 match' })).toBeVisible();
-  await expect(page.getByText('Every source file is accounted for')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
 });
 
 test('@claim:all-files-reported lists unsupported source files and prevents an all-clear', async ({ page }) => {
@@ -122,7 +156,7 @@ test('@claim:all-files-reported lists unsupported source files and prevents an a
     { name: 'backup-copy.tif', body: 'matched-tiff', type: 'image/tiff' },
   ]);
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByText('1 source file needs attention')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
   await expect(page.locator('.filename', { hasText: 'IMG_0003.psd' })).toBeVisible();
   await expect(page.getByText('This file type is not checked by this version (.psd).')).toBeVisible();
@@ -169,7 +203,7 @@ test('@claim:csv-export downloads one row per result', async ({ page }) => {
   for await (const chunk of stream) chunks.push(Buffer.from(chunk));
   const csv = Buffer.concat(chunks).toString('utf8');
   expect(csv.split('\n')).toHaveLength(9);
-  expect(csv).toContain('status,source_path,destination_paths,bytes,sha256,live_pair,note');
+  expect(csv).toContain('status,source_path,destination_paths,bytes,sha256,live_pair,folder_identity,note');
   expect(csv).toContain('missing,iPhone Export/2026/IMG_1844.MOV');
 });
 
@@ -178,7 +212,7 @@ test('@claim:no-account core audit is available without a license', async ({ pag
   await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByText('Every source file is accounted for')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export CSV' }).click();
   await expect(await downloadPromise).toBeTruthy();
@@ -190,7 +224,7 @@ test('@claim:read-only scan leaves selected file inputs intact', async ({ page }
   await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByText('Every source file is accounted for')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   await expect(page.getByText('original.jpg', { exact: true })).toBeVisible();
 });
 
@@ -229,12 +263,12 @@ test('@claim:archive-license saves receipts and prints certificates', async ({ p
     localStorage.setItem('sb_license:photo-upload-audit', 'cached-test-token');
     localStorage.setItem('sb_license_verdict:photo-upload-audit', JSON.stringify({ valid: true, checkedAt: Date.now() }));
   });
+  await installVerifiedFixturePickers(page);
   await page.goto('/');
   await expect(page.getByText('$19', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Buy Archive License/ })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/photo-upload-audit/checkout');
   await page.goto('/audit');
-  await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
-  await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
+  await selectVerifiedFixtureFolders(page);
   await page.getByRole('button', { name: 'Compare every file' }).click();
   await page.getByRole('button', { name: 'Save receipt' }).click();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('audit:receipts') || '[]').length)).toBe(1);
@@ -252,9 +286,9 @@ test('@claim:receipt-metadata-only saves receipt metadata without original media
     localStorage.setItem('sb_license:photo-upload-audit', 'cached-test-token');
     localStorage.setItem('sb_license_verdict:photo-upload-audit', JSON.stringify({ valid: true, checkedAt: Date.now() }));
   });
+  await installVerifiedFixturePickers(page);
   await page.goto('/audit');
-  await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
-  await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
+  await selectVerifiedFixtureFolders(page);
   await page.getByRole('button', { name: 'Compare every file' }).click();
   await page.getByRole('button', { name: 'Save receipt' }).click();
   const stored = await page.evaluate(() => {
@@ -338,16 +372,25 @@ test('@claim:no-analytics makes no analytics or advertising requests', async ({ 
 
 test('@claim:desktop-downloads shows a usable detected-platform installer link', async ({ page }) => {
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', (route) => route.fulfill({ json: {
-    tag_name: 'v0.1.1', html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.1',
+    tag_name: 'v0.1.3', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.3',
     assets: [
-      { name: 'photo-upload-audit_0.1.1_amd64.AppImage', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.1/photo-upload-audit_0.1.1_amd64.AppImage' },
-      { name: 'photo-upload-audit_0.1.1_x64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.1/photo-upload-audit_0.1.1_x64.dmg' },
-      { name: 'photo-upload-audit_0.1.1_aarch64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.1/photo-upload-audit_0.1.1_aarch64.dmg' },
-      { name: 'photo-upload-audit_0.1.1_x64.msi', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.1/photo-upload-audit_0.1.1_x64.msi' },
+      { name: 'photo-upload-audit_0.1.3_amd64.AppImage', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_amd64.AppImage' },
+      { name: 'photo-upload-audit_0.1.3_x64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_x64.dmg' },
+      { name: 'photo-upload-audit_0.1.3_aarch64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_aarch64.dmg' },
+      { name: 'photo-upload-audit_0.1.3_x64.msi', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_x64.msi' },
     ],
   } }));
   await page.goto('/?release-preview=1');
-  await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', /releases\/download\/v0\.1\.1\//);
+  await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', /releases\/download\/v0\.1\.3\//);
+});
+
+test('download panel withholds a desktop release built from another source commit', async ({ page }) => {
+  await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', (route) => route.fulfill({ json: {
+    tag_name: 'v0.1.3', target_commitish: '0'.repeat(40), html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.3', assets: [],
+  } }));
+  await page.goto('/?release-preview=1');
+  await expect(page.getByText('Desktop downloads are being published.')).toBeVisible();
+  await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ })).toHaveCount(0);
 });
 
 test('@claim:desktop-release-formats verifies every promised published installer format and unsigned notice', async ({ request }) => {
@@ -377,6 +420,44 @@ test('@claim:release-integrity-files verifies a published release checksum', asy
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(sumText.match(new RegExp(`^([a-f0-9]{64})\\s+\\*?${asset.name.replaceAll('.', '\\.')}$`, 'm'))?.[1]);
 });
 
+test('@claim:desktop-build-identity verifies the published Debian package embeds the manifest source commit', async ({ request }) => {
+  test.setTimeout(120_000);
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { version: string };
+  const releaseResponse = await request.get('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest');
+  expect(releaseResponse.ok()).toBe(true);
+  const release = await releaseResponse.json() as { tag_name: string; target_commitish: string; assets: Array<{ name: string; browser_download_url: string }> };
+  expect(release.tag_name).toBe(`v${packageJson.version}`);
+  const manifestAsset = release.assets.find((asset) => asset.name === 'latest.json');
+  const debAsset = release.assets.find((asset) => /\.deb$/i.test(asset.name));
+  expect(manifestAsset).toBeTruthy();
+  expect(debAsset).toBeTruthy();
+  const manifest = await (await request.get(manifestAsset!.browser_download_url)).json() as { version: string; source_commit: string };
+  expect(manifest.version).toBe(release.tag_name);
+  expect(manifest.source_commit).toMatch(/^[a-f0-9]{40}$/i);
+  expect(release.target_commitish).toBe(manifest.source_commit);
+
+  const workspace = await mkdtemp(path.join(tmpdir(), 'photo-upload-audit-package-'));
+  try {
+    const packagePath = path.join(workspace, debAsset!.name);
+    await writeFile(packagePath, await (await request.get(debAsset!.browser_download_url)).body());
+    const { stdout: arEntries } = await execFileAsync('ar', ['t', packagePath]);
+    const dataArchive = arEntries.split(/\r?\n/).find((entry) => /^data\.tar(?:\.[a-z0-9]+)?$/i.test(entry));
+    expect(dataArchive).toBeTruthy();
+    await execFileAsync('ar', ['x', packagePath, dataArchive!], { cwd: workspace });
+    const archivePath = path.join(workspace, dataArchive!);
+    const { stdout: archiveEntries } = await execFileAsync('tar', ['-tf', archivePath]);
+    const buildManifestPath = archiveEntries.split(/\r?\n/).find((entry) => /(?:^|\/)build\.json$/i.test(entry));
+    expect(buildManifestPath).toBeTruthy();
+    const { stdout: embeddedText } = await execFileAsync('tar', ['-xOf', archivePath, buildManifestPath!]);
+    const embedded = JSON.parse(embeddedText) as { product: string; version: string; build_id: string };
+    expect(embedded.product).toBe('photo-upload-audit');
+    expect(embedded.version).toBe(packageJson.version);
+    expect(embedded.build_id).toBe(manifest.source_commit);
+  } finally {
+    await rm(workspace, { recursive: true, force: true });
+  }
+});
+
 test('@claim:unsigned-installers names the exact published unsigned release version', async ({ page, request }) => {
   const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as { version: string };
   const response = await request.get('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest');
@@ -394,9 +475,9 @@ test('@claim:receipt-limit keeps at most 25 local receipts and explains the limi
     localStorage.setItem('sb_license_verdict:photo-upload-audit', JSON.stringify({ valid: true, checkedAt: Date.now() }));
     localStorage.setItem('audit:receipts', JSON.stringify(Array.from({ length: 25 }, (_, index) => ({ id: String(index) }))));
   });
+  await installVerifiedFixturePickers(page);
   await page.goto('/audit');
-  await page.locator('#source-folder').setInputFiles(fixture('readonly-source'));
-  await page.locator('#destination-folder').setInputFiles(fixture('readonly-destination'));
+  await selectVerifiedFixtureFolders(page);
   await page.getByRole('button', { name: 'Compare every file' }).click();
   await page.getByRole('button', { name: 'Save receipt' }).click();
   await expect(page.getByText('Your 25 saved receipt limit is full. Remove a saved receipt before adding another.')).toBeVisible();

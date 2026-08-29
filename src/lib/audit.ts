@@ -209,7 +209,7 @@ function byHash(files: MediaFile[]): Map<string, MediaFile[]> {
 export async function compareLibraries(
   source: MediaFile[],
   destination: MediaFile[],
-  labels = { source: 'Camera export', destination: 'Backup' },
+  labels: { source: string; destination: string; folderIdentity?: AuditResult['folderIdentity'] } = { source: 'Camera export', destination: 'Backup' },
   onProgress?: (progress: ScanProgress) => void,
 ): Promise<AuditResult> {
   const started = performance.now();
@@ -307,6 +307,7 @@ export async function compareLibraries(
     destinationCount: destination.length,
     rows,
     durationMs: performance.now() - started,
+    folderIdentity: labels.folderIdentity ?? 'verified',
   };
 }
 
@@ -329,7 +330,7 @@ function csvCell(value: string | number): string {
 }
 
 export function resultToCsv(result: AuditResult): string {
-  const headers = ['status', 'source_path', 'destination_paths', 'bytes', 'sha256', 'live_pair', 'note'];
+  const headers = ['status', 'source_path', 'destination_paths', 'bytes', 'sha256', 'live_pair', 'folder_identity', 'note'];
   const lines = result.rows.map((row) => [
     row.status,
     row.source?.relativePath ?? '',
@@ -337,6 +338,7 @@ export function resultToCsv(result: AuditResult): string {
     row.source?.size ?? row.destinations[0]?.size ?? 0,
     row.source?.hash ?? row.destinations[0]?.hash ?? '',
     row.livePair,
+    result.folderIdentity,
     row.note,
   ].map(csvCell).join(','));
   return [headers.join(','), ...lines].join('\n');

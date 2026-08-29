@@ -5,6 +5,10 @@ import { readFile } from 'node:fs/promises';
 
 const fixture = (name: string) => path.resolve('tests/fixtures', name);
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: undefined }));
+});
+
 for (const route of ['/', '/demo', '/audit', '/privacy', '/terms', '/does-not-exist']) {
   test(`route ${route} has one h1 and no serious accessibility violations`, async ({ page }) => {
     const errors: string[] = [];
@@ -106,7 +110,7 @@ test('the ?demo=1 entry point exposes demo metadata after it loads', async ({ pa
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://photo-upload-audit.sociobot.in/demo');
 });
 
-test('@claim:same-folder-safe rejects the same directory handle and accepts different same-named handles', async ({ page }) => {
+test('@claim:same-folder-safe rejects the same verified folder and withholds an all-clear from browser folder inputs', async ({ page }) => {
   await page.addInitScript(() => {
     const file = (name: string, body: string) => new File([body], name, { type: 'image/jpeg', lastModified: 1 });
     const one = { name: 'DCIM', kind: 'directory', isSameEntry: async (other: unknown) => other === one, entries: async function* () { yield ['one.jpg', { kind: 'file', getFile: async () => file('one.jpg', 'one') }]; } };
@@ -123,6 +127,42 @@ test('@claim:same-folder-safe rejects the same directory handle and accepts diff
   await page.getByRole('button', { name: 'Choose backup folder' }).click();
   await page.getByRole('button', { name: 'Compare every file' }).click();
   await expect(page.getByText('1 source file needs attention')).toBeVisible();
+
+  // Browser folder inputs cannot establish canonical directory identity. They
+  // must still scan, but the same-folder path must never become an all-clear.
+  await page.addInitScript(() => Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: undefined }));
+  await page.goto('/audit');
+  await expect(page.getByRole('button', { name: 'Choose export folder' })).toHaveCount(0);
+  await expect(page.locator('#source-folder')).toBeVisible();
+  const selectFallbackFiles = async (sourceBody: string, destinationBody: string) => {
+    await page.locator('#source-folder').evaluate((input, body) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([body], 'IMG_0001.jpg', { type: 'image/jpeg', lastModified: 1 }));
+      const folderInput = input as HTMLInputElement;
+      folderInput.files = transfer.files;
+      folderInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }, sourceBody);
+    await page.locator('#destination-folder').evaluate((input, body) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([body], 'IMG_0001.jpg', { type: 'image/jpeg', lastModified: 1 }));
+      const folderInput = input as HTMLInputElement;
+      folderInput.files = transfer.files;
+      folderInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }, destinationBody);
+  };
+  await selectFallbackFiles('same folder', 'same folder');
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
+  await expect(page.getByText('This receipt cannot confirm your backup.')).toBeVisible();
+  await expect(page.getByText('Every source file is accounted for')).toHaveCount(0);
+
+  // Different folders can commonly share a name such as DCIM. The fallback
+  // must not reject them as identical; it simply keeps the honest warning.
+  await page.goto('/audit');
+  await selectFallbackFiles('camera export', 'different backup');
+  await page.getByRole('button', { name: 'Compare every file' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
+  await expect(page.getByRole('alert')).not.toContainText('same folder');
 });
 
 test('folder-selection errors name the next action that can fix them', async ({ page }) => {
@@ -193,7 +233,7 @@ test('@claim:one-to-one-match allocates one backup file to at most one identical
   await page.locator('#source-folder').setInputFiles(fixture('duplicate-source'));
   await page.locator('#destination-folder').setInputFiles(fixture('duplicate-destination'));
   await page.getByRole('button', { name: 'Compare every file' }).click();
-  await expect(page.getByText('1 source file needs attention')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Folder identity could not be verified' })).toBeVisible();
   await page.getByRole('button', { name: 'missing 1' }).click();
   await expect(page.getByRole('cell', { name: 'No matching backup file' })).toBeVisible();
   await page.getByRole('button', { name: 'verified 1' }).click();

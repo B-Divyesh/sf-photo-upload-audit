@@ -65,7 +65,7 @@ jobs:
         run: |
           cd release-assets
           sha256sum * > SHA256SUMS
-          python3 ../scripts/release_manifest.py "${GITHUB_REF_NAME}" . > latest.json
+          python3 ../scripts/release_manifest.py "${GITHUB_REF_NAME}" . "$(git rev-parse HEAD)" > latest.json
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
