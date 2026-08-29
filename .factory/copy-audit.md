@@ -1,11 +1,11 @@
 # Landing page copy audit
 
-Audited 2026-08-29 for polish round 8. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
+Audited 2026-08-29 for polish round 9. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words, uses a banned marketing word, or makes an unqualified comparison promise.
 
 | Landing text | Words | Flag |
 |---|---:|---|
 | Compare a camera export with its backup | 7 | — |
-| Check every photo before clearing space | 6 | — |
+| Check which photos reached your backup | 6 | — |
 | For phone owners who need to verify originals, videos, and Live Photo pairs before clearing space. | 16 | — |
 | Try it with sample data | 5 | — |
 | See a finished audit in one click. | 7 | — |
@@ -14,7 +14,7 @@ Audited 2026-08-29 for polish round 8. Counts treat hyphenated terms, numbers, p
 | Core audit and CSV are free | 6 | — |
 | The receipt | 2 | — |
 | See which files match or need attention | 7 | — |
-| The app compares each file’s contents, even when its name changed. | 11 | — |
+| The app compares each supported file’s contents, even when its name changed. | 12 | — |
 | Audit your folders | 3 | — |
 | File contents match | 3 | — |
 | No backup file | 3 | — |
@@ -38,7 +38,7 @@ Audited 2026-08-29 for polish round 8. Counts treat hyphenated terms, numbers, p
 | Each row says what happened. | 5 | — |
 | Desktop app | 2 | — |
 | Download the desktop app | 4 | — |
-| Desktop installers for v0.1.5 are unsigned. | 6 | — |
+| Desktop installers for v0.1.6 are unsigned. | 6 | — |
 | Checking desktop releases… | 3 | — |
 | Detected: Linux | 2 | — |
 | Download for Linux | 3 | — |
@@ -65,7 +65,7 @@ Audited 2026-08-29 for polish round 8. Counts treat hyphenated terms, numbers, p
 | Sociobot/Dodo processes your payment. | 4 | — |
 | Email support@sociobot.in with billing questions. | 5 | — |
 | Check your backup before clearing your phone. | 7 | — |
-| v0.1.5 · build 1c7b93b45924 · desktop app · files stay on your device | 10 | — |
+| v0.1.6 · build 350adcc5108c · desktop app · files stay on your device | 10 | — |
 
 ## Terminology
 
@@ -81,15 +81,16 @@ Audited 2026-08-29 for polish round 8. Counts treat hyphenated terms, numbers, p
 | Saved paid audit output | saved receipt |
 | Seeded isolated experience | demo |
 
-## Round-8 checks
+## Round-9 checks
 
 - The first screen says the job, audience, first action, outcome, and three plain facts in one viewport at 390 px and 1440 px.
 - The walkthrough and privacy labels name their actual content. Generic “Inside the app” and mood-led “Clear boundaries” text are absent.
-- “Every” is backed by a receipt that lists every selected source entry. Unsupported entries are shown as skipped and prevent the all-clear.
+- The headline names the supported-media boundary without saying all photos are content-compared. The receipt says only supported files are compared; every selected entry is still listed.
+- `public comparison copy qualifies the supported-media boundary` rejects unqualified `every` or `each` comparison promises across the landing page, audit route, and README.
 - The site uses **Live Photo pair** everywhere; “sidecar,” “merchant of record,” and “local-first” are absent from public copy.
 - Terms gives deletion advice without claiming that the product replaces a backup or restore test.
 - The Audit description names the supported-media boundary and says unchecked files remain visible.
 - Saved receipt history says original media files are not included. Privacy offers a labelled control to clear saved license and receipt data.
 - Verified folder handles reject the same directory. Browser folder inputs show an identity warning and never produce an all-clear.
-- The footer displays the v0.1.5 release source build. The landing withholds a stale installer when its release tag or source commit differs.
+- The footer displays the v0.1.6 release source build. The landing withholds a stale installer when its release tag or source commit differs.
 - The catalog sentence is verb-first, contains 11 words, and is 68 characters long.
