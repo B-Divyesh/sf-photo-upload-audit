@@ -51,7 +51,7 @@ test('@claim:demo-sandbox opens a finished sample audit without writing real bro
   });
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 350));
-    await route.fulfill({ json: { tag_name: 'v0.1.3', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.3', assets: [] } });
+    await route.fulfill({ json: { tag_name: 'v0.1.4', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4', assets: [] } });
   });
   await page.goto('/?release-preview=1');
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
@@ -372,21 +372,21 @@ test('@claim:no-analytics makes no analytics or advertising requests', async ({ 
 
 test('@claim:desktop-downloads shows a usable detected-platform installer link', async ({ page }) => {
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', (route) => route.fulfill({ json: {
-    tag_name: 'v0.1.3', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.3',
+    tag_name: 'v0.1.4', target_commitish: currentSourceCommit, html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4',
     assets: [
-      { name: 'photo-upload-audit_0.1.3_amd64.AppImage', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_amd64.AppImage' },
-      { name: 'photo-upload-audit_0.1.3_x64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_x64.dmg' },
-      { name: 'photo-upload-audit_0.1.3_aarch64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_aarch64.dmg' },
-      { name: 'photo-upload-audit_0.1.3_x64.msi', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.3/photo-upload-audit_0.1.3_x64.msi' },
+      { name: 'photo-upload-audit_0.1.4_amd64.AppImage', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_amd64.AppImage' },
+      { name: 'photo-upload-audit_0.1.4_x64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_x64.dmg' },
+      { name: 'photo-upload-audit_0.1.4_aarch64.dmg', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_aarch64.dmg' },
+      { name: 'photo-upload-audit_0.1.4_x64.msi', browser_download_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/download/v0.1.4/photo-upload-audit_0.1.4_x64.msi' },
     ],
   } }));
   await page.goto('/?release-preview=1');
-  await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', /releases\/download\/v0\.1\.3\//);
+  await expect(page.locator('[data-downloads]').getByRole('link', { name: /Download for/ }).first()).toHaveAttribute('href', /releases\/download\/v0\.1\.4\//);
 });
 
 test('download panel withholds a desktop release built from another source commit', async ({ page }) => {
   await page.route('https://api.github.com/repos/B-Divyesh/sf-photo-upload-audit/releases/latest', (route) => route.fulfill({ json: {
-    tag_name: 'v0.1.3', target_commitish: '0'.repeat(40), html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.3', assets: [],
+    tag_name: 'v0.1.4', target_commitish: '0'.repeat(40), html_url: 'https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4', assets: [],
   } }));
   await page.goto('/?release-preview=1');
   await expect(page.getByText('Desktop downloads are being published.')).toBeVisible();
@@ -446,7 +446,7 @@ test('@claim:desktop-build-identity verifies the published Debian package embeds
     await execFileAsync('ar', ['x', packagePath, dataArchive!], { cwd: workspace });
     const archivePath = path.join(workspace, dataArchive!);
     const { stdout: archiveEntries } = await execFileAsync('tar', ['-tf', archivePath]);
-    const buildManifestPath = archiveEntries.split(/\r?\n/).find((entry) => /(?:^|\/)build\.json$/i.test(entry));
+    const buildManifestPath = archiveEntries.split(/\r?\n/).find((entry) => /(?:^|\/)build-provenance\.json$/i.test(entry));
     expect(buildManifestPath).toBeTruthy();
     const { stdout: embeddedText } = await execFileAsync('tar', ['-xOf', archivePath, buildManifestPath!]);
     const embedded = JSON.parse(embeddedText) as { product: string; version: string; build_id: string };
