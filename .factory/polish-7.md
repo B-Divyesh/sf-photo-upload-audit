@@ -47,7 +47,7 @@ I read every `review-*.md` and `polish-*.md`. This map retains every historical 
 | F-6-7 | Desktop section heading names the desktop app download. | Public-copy regression; live home. |
 | F-6-8 | Purchase link visibly and accessibly identifies an external checkout. | Public-copy regression; live home. |
 | F-7-1 | Fallback directory inputs no longer claim folder identity. Their result is labelled unverified, blocks all-clear/certification actions, and explains how to verify folders. | Expanded `@claim:same-folder-safe`; `fallback-identity-live-390.png`; live `/audit`. |
-| F-7-2 | Version is `0.1.4`; Tauri bundles `build-provenance.json`, `latest.json` records the source commit, and the landing refuses a stale release. Documentation-only commits keep the tagged build identity. | `@claim:desktop-build-identity`; live `home-release-live-1366.png`; <https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4>. |
+| F-7-2 | Version is `0.1.4`; Tauri bundles `build-provenance.json`, `latest.json` records the source commit, and the landing refuses a stale release. Documentation-only and shallow-clone builds keep the tagged build identity. | `@claim:desktop-build-identity`; live `home-release-live-1366.png`; <https://github.com/B-Divyesh/sf-photo-upload-audit/releases/tag/v0.1.4>. |
 
 ## Verification
 

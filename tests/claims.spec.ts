@@ -10,7 +10,16 @@ import { promisify } from 'node:util';
 const fixture = (name: string) => path.resolve('tests/fixtures', name);
 const execFileAsync = promisify(execFile);
 const currentVersion = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }).version;
-const currentSourceCommit = execFileSync('git', ['rev-list', '-n', '1', `v${currentVersion}`], { encoding: 'utf8' }).trim();
+function releaseSourceCommit(): string {
+  const tag = `v${currentVersion}`;
+  try {
+    return execFileSync('git', ['rev-list', '-n', '1', tag], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    const lines = execFileSync('git', ['ls-remote', 'origin', `refs/tags/${tag}`, `refs/tags/${tag}^{}`], { encoding: 'utf8' }).trim().split(/\r?\n/);
+    return (lines.find((line) => line.endsWith(`refs/tags/${tag}^{}`)) || lines.find((line) => line.endsWith(`refs/tags/${tag}`)))!.split(/\s+/)[0];
+  }
+}
+const currentSourceCommit = releaseSourceCommit();
 
 test.beforeEach(async ({ page }) => {
   // Most browser tests exercise the anonymous folder-input fallback. Individual
