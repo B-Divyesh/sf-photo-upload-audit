@@ -15,7 +15,7 @@
 - Release source commit: `d8d5ac9dc4c84388611cf551fd42a4813b41764e`
 - Safety repair commit: `8265b8ea5dcda186b176cea8cc09dcabad0387fd`
 - Release workflow: [33229721929](https://github.com/B-Divyesh/sf-photo-upload-audit/actions/runs/33229721929), successful macOS arm64/x64, Windows, Linux, and manifest jobs.
-- Static deployment: `f091a7a6-0b69-4e19-9917-a6fad4ce6f46`
+- Static deployment: `2df730a3-037c-4fd7-9d3c-e3cc676f3a52`
 - Live URL: <https://photo-upload-audit.sociobot.in>
 
 ## How to run and verify
@@ -30,12 +30,12 @@ Run one declared claim with `npm test -- --grep @claim:<id>`. The direct demo is
 
 ## Exact evidence
 
-- Clean remote clone `/tmp/photo-upload-audit-polish7-clean-final.rX9OC2/repo`, commit `d8d5ac9dc4c84388611cf551fd42a4813b41764e`: `npm ci` passed with zero vulnerabilities; every 30 exact claim command passed; `npm test` passed **53/53**; `npm run build:site` passed.
+- Clean **shallow** remote clone `/tmp/photo-upload-audit-polish7-final-clean.0vovBB/repo`, commit `f0540ce2bb1d617410ef3c30481f1b575ff91a9c`: `npm ci` passed with zero vulnerabilities; every 30 exact claim command passed; `npm test` passed **53/53**; `npm run build:site` passed and resolved the tagged installer build ID `d8d5ac9dc4c84388611cf551fd42a4813b41764e` through `origin`.
 - Build budget: 40.99 kB raw / 13.98 kB gzip initial JavaScript; 20.81 kB raw / 5.49 kB gzip CSS.
 - `@claim:desktop-build-identity` downloaded the public Debian installer, extracted its `build-provenance.json`, and matched its build ID to `latest.json` and the release target commit.
-- Cold live `verify-url.sh` passed home, `?demo=1`, `/demo`, `/audit`, `/privacy`, and `/terms`. Playwright axe at 390 px found zero serious/critical violations on those routes plus the 404. Evidence: `/tmp/photo-upload-audit-polish7-live/live-recheck.json` and matching screenshots.
-- Cold live same-folder fallback test showed the unverified-identity warning and no all-clear: `/tmp/photo-upload-audit-polish7-live/fallback-identity-live-390.png`.
-- Cold live demo test showed banner/eight rows, reset to eight rows, and clean Start-for-real transition: `/tmp/photo-upload-audit-polish7-live/demo-live-recheck.json`.
+- Final cold live `verify-url.sh` passed home, `?demo=1`, `/demo`, `/audit`, `/privacy`, and `/terms` after deployment `2df730a3-037c-4fd7-9d3c-e3cc676f3a52`. Playwright axe at 390 px found zero serious/critical violations on those routes and the styled 404; normal routes had zero console/page errors. Evidence: `/tmp/photo-upload-audit-polish7-live-final/live-recheck-final.json` and matching screenshots.
+- Final cold live same-folder fallback test showed the unverified-identity warning, no all-clear, and no certification controls: `/tmp/photo-upload-audit-polish7-live-final/fallback-identity-final-390.png`.
+- Final cold live demo test showed banner/eight rows, one Missing row, reset to All/eight rows, and clean Start-for-real transition: `/tmp/photo-upload-audit-polish7-live-final/live-recheck-final.json`.
 
 `cargo check` in this disposable container cannot complete because its Linux image lacks the `glib-2.0` development package. The release workflow installs the required Ubuntu dependencies and successfully built every desktop installer, including the package inspected by the claim test.
 
