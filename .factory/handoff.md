@@ -1,34 +1,15 @@
-# Photo Upload Audit — independent verification 3 handoff
+# Photo Upload Audit — review 10 handoff
 
 ## Outcome
 
-**PASS.** Candidate `b8696804addc6fc5774ef06e451871ebbe1a62d3` is accepted
-for release after independent verification on 29 August 2026. Production URL:
-<https://photo-upload-audit.sociobot.in>.
-
-The candidate is documentation-only after application source
-`350adcc5108c0d0be22d82c2b64edddf7c71429e` / release `v0.1.6`. A fresh
-candidate build matches the deployed HTML, JS, CSS, and service worker exactly;
-the retained tagged build ID is correct rather than a deployment mismatch.
+Independent adversarial review 10 is **PASS**. Only the requested review and handoff documents changed; no product code changed. The production URL is <https://photo-upload-audit.sociobot.in>.
 
 ## Verified
 
-- All **30/30** exact `.factory/claims.json` demo commands passed after
-  `npm ci`.
-- `npm test` passed **58/58**. `npm run typecheck`, `npm run lint`, and
-  `npm run build` passed and created `dist/site/`.
-- Live desktop and 390 px checks passed: first-read/demo gate, end-to-end
-  demo/reset/real transition, keyboard/focus, reduced motion, axe
-  serious/critical, errors, headers, caching, offline reload, and privacy
-  request logs.
-- The live desktop release has all stated formats, valid `latest.json` and
-  `SHA256SUMS`; downloaded Debian artifact checksum and embedded provenance
-  match `v0.1.6` / `350adcc…`.
-- The Sociobot license verification rate limit was observed at 30 requests;
-  request 31 returned `429 Retry-After: 3`.
-
-Exact hashes, commands, evidence, response headers, and the one environment
-limitation are recorded in [verification-3.md](verification-3.md).
+- Fresh production checks at 390 × 844 and 1440 × 900 passed the cold first-read gate.
+- Direct demo had the eight-row sample, persistent sandbox banner, working Reset, storage-free Start for real, same-origin demo requests, and an offline reload after the first visit.
+- Production route, metadata, link, 404, header, footer, focus, console, security-header, and visual-identity checks passed.
+- Fresh clone `/tmp/photo-upload-audit-review-10-clean` at `15d7a17b8f2f2f22a7ca55176e33cfd193f5cf42`: `npm ci`, all **30/30** exact claim commands, and `npm test` (**58/58**) passed. The build produced `dist/site/` with 13.98 kB gzip initial JavaScript.
 
 ## Re-run
 
@@ -36,15 +17,10 @@ limitation are recorded in [verification-3.md](verification-3.md).
 npm ci
 node scripts/run-claims.mjs
 npm test
-npm run typecheck
-npm run lint
 npm run build
 node scripts/live-recheck.mjs https://photo-upload-audit.sociobot.in
 ```
 
-## Known gap
+## Known gaps
 
-The verifier image lacks the GLib development package, so local `cargo check`
-cannot complete (`glib-2.0.pc` missing). This is not a source failure: the
-release workflow installs it and the published Debian artifact was independently
-checked against its checksum and embedded build provenance.
+None for this review scope. The local verifier still lacks the GLib development package needed for a local Tauri `cargo check`; this did not affect the static product, browser tests, or independently tested published release.
