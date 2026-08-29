@@ -1,6 +1,6 @@
 # Landing page copy audit
 
-Audited 2026-08-29 for polish round 7. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
+Audited 2026-08-29 for polish round 8. Counts treat hyphenated terms, numbers, product names, and URLs as one word. Headings, controls, and footer text are included because a screen reader can encounter each independently. No listed sentence exceeds 22 words or uses a banned marketing word.
 
 | Landing text | Words | Flag |
 |---|---:|---|
@@ -12,13 +12,15 @@ Audited 2026-08-29 for polish round 7. Counts treat hyphenated terms, numbers, p
 | Files stay on this device | 5 | — |
 | Works without an account | 4 | — |
 | Core audit and CSV are free | 6 | — |
-| See which files match or need attention | 8 | — |
+| The receipt | 2 | — |
+| See which files match or need attention | 7 | — |
 | The app compares each file’s contents, even when its name changed. | 11 | — |
 | Audit your folders | 3 | — |
 | File contents match | 3 | — |
 | No backup file | 3 | — |
-| Same name, different contents | 5 | — |
+| Same name, different contents | 4 | — |
 | 2 matching copies | 3 | — |
+| How it works | 3 | — |
 | Compare without changing either folder | 5 | — |
 | Choose the export | 3 | — |
 | Select the folder copied from your phone. | 7 | — |
@@ -26,6 +28,7 @@ Audited 2026-08-29 for polish round 7. Counts treat hyphenated terms, numbers, p
 | Select the disk or server folder that should contain it. | 10 | — |
 | Read the receipt | 3 | — |
 | Review missing, changed, duplicate, extra, and unpaired files. | 8 | — |
+| Folder comparison walkthrough | 3 | — |
 | Compare two folders in three steps | 6 | — |
 | Pick both folders | 3 | — |
 | Source is always first. | 4 | — |
@@ -33,10 +36,14 @@ Audited 2026-08-29 for polish round 7. Counts treat hyphenated terms, numbers, p
 | The current file and count stay visible. | 7 | — |
 | Review files that need attention | 5 | — |
 | Each row says what happened. | 5 | — |
+| Desktop app | 2 | — |
 | Download the desktop app | 4 | — |
-| Desktop installers for v0.1.4 are unsigned. | 6 | — |
+| Desktop installers for v0.1.5 are unsigned. | 6 | — |
 | Checking desktop releases… | 3 | — |
+| Detected: Linux | 2 | — |
+| Download for Linux | 3 | — |
 | View all releases | 3 | — |
+| Privacy and backup limits | 4 | — |
 | Your photo data stays on your device | 7 | — |
 | The app reads the folders you choose. | 7 | — |
 | It never moves, edits, or deletes media. | 7 | — |
@@ -44,17 +51,21 @@ Audited 2026-08-29 for polish round 7. Counts treat hyphenated terms, numbers, p
 | License checks send only the license token. | 7 | — |
 | It checks two folders. | 4 | — |
 | Keep your existing backup and complete a restore test. | 9 | — |
+| Archive License | 2 | — |
 | Keep up to 25 audit receipts | 6 | — |
 | $19 one-time. | 2 | — |
 | Save up to 25 local audit receipts and print verification certificates. | 11 | — |
 | Scanning and CSV export stay free. | 6 | — |
+| $19 one-time purchase | 3 | — |
 | Buy Archive License (external checkout) | 5 | — |
 | Review saved receipts | 3 | — |
 | Enter license token | 3 | — |
+| License token | 2 | — |
+| Verify license | 2 | — |
 | Sociobot/Dodo processes your payment. | 4 | — |
 | Email support@sociobot.in with billing questions. | 5 | — |
 | Check your backup before clearing your phone. | 7 | — |
-| v0.1.4 · build d8d5ac9dc4c8 · desktop app · files stay on your device | 10 | — |
+| v0.1.5 · build 1c7b93b45924 · desktop app · files stay on your device | 10 | — |
 
 ## Terminology
 
@@ -70,13 +81,15 @@ Audited 2026-08-29 for polish round 7. Counts treat hyphenated terms, numbers, p
 | Saved paid audit output | saved receipt |
 | Seeded isolated experience | demo |
 
-## Round-7 checks
+## Round-8 checks
 
 - The first screen says the job, audience, first action, outcome, and three plain facts in one viewport at 390 px and 1440 px.
+- The walkthrough and privacy labels name their actual content. Generic “Inside the app” and mood-led “Clear boundaries” text are absent.
 - “Every” is backed by a receipt that lists every selected source entry. Unsupported entries are shown as skipped and prevent the all-clear.
 - The site uses **Live Photo pair** everywhere; “sidecar,” “merchant of record,” and “local-first” are absent from public copy.
 - Terms gives deletion advice without claiming that the product replaces a backup or restore test.
 - The Audit description names the supported-media boundary and says unchecked files remain visible.
 - Saved receipt history says original media files are not included. Privacy offers a labelled control to clear saved license and receipt data.
 - Verified folder handles reject the same directory. Browser folder inputs show an identity warning and never produce an all-clear.
-- The footer displays the release source build. The landing withholds a stale installer when its release tag or source commit differs.
+- The footer displays the v0.1.5 release source build. The landing withholds a stale installer when its release tag or source commit differs.
+- The catalog sentence is verb-first, contains 11 words, and is 68 characters long.
